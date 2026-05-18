@@ -1,0 +1,1130 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { supabase } from "@/lib/supabase";
+import { 
+  CalendarBlank, 
+  List, 
+  CaretLeft, 
+  CaretRight, 
+  Plus, 
+  CheckCircle, 
+  CircleNotch, 
+  Clock, 
+  Info,
+  MapPin,
+  Sparkle,
+  ClipboardText
+} from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+type TimelineEvent = {
+  id: string;
+  phase: string;
+  date_range: string;
+  type: string;
+  description: string;
+  order_index: number;
+};
+
+type Task = {
+  id: string;
+  name: string;
+  workstream: string;
+  pic: string;
+  priority: "High" | "Medium" | "Low";
+  deadline: string;
+  status: "Not Started" | "In Progress" | "Waiting Review" | "Blocked" | "Done" | "Delayed";
+  dependency?: string;
+  doc_link?: string;
+  blocker?: string;
+  notes?: string;
+};
+
+// High-fidelity fallback events containing the exact 17 timeline phases
+const defaultEvents: TimelineEvent[] = [
+  {
+    id: "t0",
+    phase: "Fase Planning & Persiapan Kompetisi",
+    date_range: "1 – 31 Mei 2026",
+    type: "Phase Ingestion",
+    description: "Perumusan konsep, pembuatan timeline, persiapan dataset, penyusunan guideline, dan koordinasi dengan partnership & sponsor.",
+    order_index: 0
+  },
+  {
+    id: "t1",
+    phase: "Pembukaan Pendaftaran & Pengumpulan Proposal",
+    date_range: "8 – 26 Juni 2026",
+    type: "Registration",
+    description: "Peserta mendaftar dan mengumpulkan proposal ide WebGIS berbasis tema Maps That Think!",
+    order_index: 1
+  },
+  {
+    id: "t2",
+    phase: "Seleksi Proposal & Kurasi Tim",
+    date_range: "29 Juni – 3 Juli 2026",
+    type: "Phase Ingestion",
+    description: "Panitia menyeleksi proposal dan menentukan 50 tim terkurasi.",
+    order_index: 2
+  },
+  {
+    id: "t3",
+    phase: "Pengumuman 50 Tim Terkurasi",
+    date_range: "4 Juli 2026",
+    type: "Announcement",
+    description: "Tim terpilih diumumkan melalui kanal resmi MAPID.",
+    order_index: 3
+  },
+  {
+    id: "t4",
+    phase: "Technical Meeting & Delegasi Fasilitas",
+    date_range: "6 Juli 2026",
+    type: "Technical Meeting",
+    description: "Penjelasan teknis kompetisi, data, survey activities, fasilitas, timeline, penggunaan GEO MAPID, penggunaan MAPID MAPS, dan ketentuan WebGIS.",
+    order_index: 4
+  },
+  {
+    id: "t5",
+    phase: "Mentoring 1 — PRD & Product Planning",
+    date_range: "8 Juli 2026",
+    type: "Field Mentoring",
+    description: "Peserta mendapatkan arahan mengenai PRD, struktur dokumen, user needs, fitur produk, user flow, kebutuhan data, dan rencana pengembangan WebGIS.",
+    order_index: 5
+  },
+  {
+    id: "t6",
+    phase: "Survey Activities & Data Enrichment",
+    date_range: "9 – 27 Juli 2026",
+    type: "Phase Ingestion",
+    description: "Tim melakukan pengayaan, validasi, atau pelengkapan data lapangan dengan dukungan survey activity budget.",
+    order_index: 6
+  },
+  {
+    id: "t7",
+    phase: "Mentoring 2 — GEO MAPID, Database & MAPID MAPS",
+    date_range: "29 Juli 2026",
+    type: "Field Mentoring",
+    description: "Peserta mendapatkan arahan penggunaan GEO MAPID untuk database/pengelolaan data dan penggunaan MAPID MAPS sebagai basemap utama WebGIS.",
+    order_index: 7
+  },
+  {
+    id: "t8",
+    phase: "Data Processing & WebGIS Development",
+    date_range: "29 Juli – 4 September 2026",
+    type: "AI Implementation",
+    description: "Tim mengolah data MAPID dan data hasil survey activities menjadi insight, lalu mengembangkan WebGIS.",
+    order_index: 8
+  },
+  {
+    id: "t9",
+    phase: "Mentoring 3 — Product Review WebGIS",
+    date_range: "19 Agustus 2026",
+    type: "Field Mentoring",
+    description: "Review progres WebGIS peserta, termasuk struktur produk, kualitas visualisasi, interaksi peta, penyajian insight, dan kesesuaian dengan kaidah MAPID.",
+    order_index: 9
+  },
+  {
+    id: "t10",
+    phase: "Pengumpulan Final WebGIS & PRD",
+    date_range: "4 September 2026",
+    type: "Submission",
+    description: "Peserta mengumpulkan link WebGIS, dokumen PRD, metadata, dan dokumentasi pengolahan data.",
+    order_index: 10
+  },
+  {
+    id: "t11",
+    phase: "Seleksi Grand Final",
+    date_range: "7 – 11 September 2026",
+    type: "Phase Ingestion",
+    description: "Juri menilai WebGIS, PRD, dan kelayakan finalis.",
+    order_index: 11
+  },
+  {
+    id: "t12",
+    phase: "Pengumuman Top 10 Finalis",
+    date_range: "12 September 2026",
+    type: "Announcement",
+    description: "Top 10 finalis diumumkan untuk tampil di MAPID Catalyst 2026.",
+    order_index: 12
+  },
+  {
+    id: "t13",
+    phase: "Mentoring 4 — Public Speaking & Final Presentation",
+    date_range: "14 – 15 September 2026",
+    type: "Field Mentoring",
+    description: "Top 10 finalis mendapatkan mentoring public speaking, storytelling produk, demo WebGIS, dan simulasi presentasi final.",
+    order_index: 13
+  },
+  {
+    id: "t14",
+    phase: "Masa Perbaikan Finalis",
+    date_range: "12 – 17 September 2026",
+    type: "Phase Ingestion",
+    description: "Finalis melakukan penyempurnaan produk dan materi presentasi berdasarkan masukan awal panitia/mentor.",
+    order_index: 14
+  },
+  {
+    id: "t15",
+    phase: "Final Presentation, Jury Evaluation & Showcase",
+    date_range: "19 September 2026",
+    type: "Announcement",
+    description: "Finalis mempresentasikan prototype dan demo WebGIS di hadapan juri dan audiens (TBD).",
+    order_index: 15
+  },
+  {
+    id: "t16",
+    phase: "Showcase, Panel Discussion & Awarding",
+    date_range: "20 September 2026",
+    type: "Announcement",
+    description: "Showcase publik, diskusi panel, pengumuman pemenang, dan awarding di MAPID Catalyst 2026 (TBD).",
+    order_index: 16
+  },
+  {
+    id: "t17",
+    phase: "Post-Event Publication",
+    date_range: "21 – 30 September 2026",
+    type: "Announcement",
+    description: "Publikasi karya, dokumentasi, dan recap kompetisi.",
+    order_index: 17
+  }
+];
+
+const parseDateRangeStr = (rangeStr: string): { start: Date; end: Date } | null => {
+  const str = rangeStr.toLowerCase().replace(/\s+/g, ' ');
+  const months = [
+    "januari", "februari", "maret", "april", "mei", "juni",
+    "juli", "agustus", "september", "oktober", "november", "desember"
+  ];
+  
+  const numbers = str.match(/\d+/g);
+  if (!numbers) return null;
+  
+  const monthsFound: { index: number; name: string; pos: number }[] = [];
+  months.forEach((m, idx) => {
+    let pos = str.indexOf(m);
+    while (pos !== -1) {
+      monthsFound.push({ index: idx, name: m, pos });
+      pos = str.indexOf(m, pos + 1);
+    }
+  });
+  monthsFound.sort((a, b) => a.pos - b.pos);
+  
+  if (monthsFound.length === 0) return null;
+  
+  const yearMatch = str.match(/\b(202\d)\b/);
+  const matchedYear = yearMatch ? parseInt(yearMatch[1], 10) : 2026;
+  
+  const isRange = str.includes("–") || str.includes("-") || str.includes("sampai") || str.includes("s.d") || str.includes("s/d");
+  
+  if (!isRange && monthsFound.length === 1 && numbers.length >= 1) {
+    const day = parseInt(numbers[0], 10);
+    const month = monthsFound[0].index;
+    return {
+      start: new Date(matchedYear, month, day),
+      end: new Date(matchedYear, month, day, 23, 59, 59)
+    };
+  }
+  
+  if (monthsFound.length >= 2 && numbers.length >= 2) {
+    const startDay = parseInt(numbers[0], 10);
+    const startMonth = monthsFound[0].index;
+    const endDay = parseInt(numbers[1], 10);
+    const endMonth = monthsFound[1].index;
+    return {
+      start: new Date(matchedYear, startMonth, startDay),
+      end: new Date(matchedYear, endMonth, endDay, 23, 59, 59)
+    };
+  }
+  
+  if (monthsFound.length === 1 && numbers.length >= 2) {
+    const startDay = parseInt(numbers[0], 10);
+    const endDay = parseInt(numbers[1], 10);
+    const month = monthsFound[0].index;
+    return {
+      start: new Date(matchedYear, month, startDay),
+      end: new Date(matchedYear, month, endDay, 23, 59, 59)
+    };
+  }
+  
+  if (monthsFound.length === 1 && numbers.length >= 1) {
+    const day = parseInt(numbers[0], 10);
+    const month = monthsFound[0].index;
+    return {
+      start: new Date(matchedYear, month, day),
+      end: new Date(matchedYear, month, day, 23, 59, 59)
+    };
+  }
+  
+  return null;
+};
+
+const getAssociatedWorkstreams = (type: string, name: string): string[] => {
+  const t = type.toLowerCase();
+  const n = name.toLowerCase();
+  const list: string[] = [];
+  
+  if (n.includes("planning") || n.includes("persiapan") || t.includes("milestone")) {
+    list.push("Program Management", "Sponsor", "Marketing", "Design", "Dataset", "Platform & Tech", "Competition");
+  }
+  if (t.includes("registration") || n.includes("pendaftaran") || n.includes("proposal")) {
+    list.push("Competition", "Marketing", "Design");
+  }
+  if (t.includes("selection") || t.includes("announcement") || n.includes("seleksi") || n.includes("pengumuman") || n.includes("finalis")) {
+    list.push("Competition", "Marketing");
+  }
+  if (t.includes("technical") || n.includes("technical meeting")) {
+    list.push("Competition", "Event Ops");
+  }
+  if (t.includes("mentoring") || n.includes("mentoring")) {
+    list.push("Mentoring");
+  }
+  if (n.includes("survey") || t.includes("survey")) {
+    list.push("Survey Activities");
+  }
+  if (t.includes("ai") || t.includes("platform") || n.includes("webgis") || n.includes("processing") || n.includes("data") || n.includes("perbaikan")) {
+    list.push("Platform & Tech", "Dataset", "Competition");
+  }
+  if (t.includes("submission") || n.includes("pengumpulan") || n.includes("final")) {
+    list.push("Competition");
+  }
+  if (t.includes("event") || n.includes("showcase") || n.includes("awarding") || n.includes("gladi")) {
+    list.push("Event Ops", "Sponsor", "Marketing");
+  }
+  if (t.includes("sponsor") || n.includes("sponsor")) {
+    list.push("Sponsor");
+  }
+  
+  const uniqueList = Array.from(new Set(list));
+  return uniqueList.length > 0 ? uniqueList : ["Program Management"];
+};
+
+export default function TimelineView({ initialEvents, initialTasks = [] }: { initialEvents: TimelineEvent[]; initialTasks?: Task[] }) {
+  const [activeTab, setActiveTab] = useState<"list" | "calendar">("list");
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  
+  // Use DB events, fallback to default high-fidelity events if DB is empty
+  const [events, setEvents] = useState<TimelineEvent[]>(() => {
+    return initialEvents.length > 0 ? initialEvents : defaultEvents;
+  });
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<TimelineEvent>>({});
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEditClick = (event: TimelineEvent) => {
+    setEditForm(event);
+    setIsEditing(true);
+    setShowAddModal(true);
+  };
+
+  const handleAddNewClick = () => {
+    setEditForm({
+      id: crypto.randomUUID(),
+      phase: "",
+      date_range: "",
+      type: "Registration",
+      description: "",
+      order_index: events.length + 1
+    });
+    setIsEditing(false);
+    setShowAddModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.id || !editForm.phase) return;
+
+    const eventToSave = editForm as TimelineEvent;
+    
+    if (isEditing) {
+      setEvents(events.map(ev => ev.id === eventToSave.id ? eventToSave : ev));
+    } else {
+      setEvents([...events, eventToSave]);
+    }
+    
+    setShowAddModal(false);
+
+    try {
+      await supabase.from("catalyst_timeline").upsert({
+        id: eventToSave.id,
+        phase: eventToSave.phase,
+        date_range: eventToSave.date_range,
+        type: eventToSave.type,
+        description: eventToSave.description,
+        order_index: eventToSave.order_index
+      });
+    } catch (err) {
+      console.error("Error saving timeline event:", err);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setEvents(events.filter(ev => ev.id !== id));
+    setShowAddModal(false);
+    
+    try {
+      await supabase.from("catalyst_timeline").delete().eq("id", id);
+    } catch (err) {
+      console.error("Error deleting timeline event:", err);
+    }
+  };
+
+  const handleTaskStatusChange = async (taskId: string, newStatus: Task["status"]) => {
+    // Optimistic update
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    
+    try {
+      await supabase.from("catalyst_tasks").update({ status: newStatus }).eq("id", taskId);
+    } catch (err) {
+      console.error("Error updating task status:", err);
+    }
+  };
+
+  // Compute currently active or next upcoming phase dynamically based on today's actual date
+  const activeEventId = useMemo(() => {
+    const today = new Date();
+    let foundId: string | null = null;
+    let nextUpcoming: TimelineEvent | null = null;
+    
+    for (const event of events) {
+      const range = parseDateRangeStr(event.date_range);
+      if (range) {
+        if (today >= range.start && today <= range.end) {
+          foundId = event.id;
+          break;
+        }
+        if (today < range.start) {
+          if (!nextUpcoming) {
+            nextUpcoming = event;
+          } else {
+            const nextRange = parseDateRangeStr(nextUpcoming.date_range);
+            if (nextRange && range.start < nextRange.start) {
+              nextUpcoming = event;
+            }
+          }
+        }
+      }
+    }
+    return foundId || (nextUpcoming ? nextUpcoming.id : null);
+  }, [events]);
+
+  // Calendar State
+  // Default to today's actual month and year
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<number | null>(() => new Date().getDate());
+
+  const months = [
+    { name: "Januari", eng: "january", short: "jan" },
+    { name: "Februari", eng: "february", short: "feb" },
+    { name: "Maret", eng: "march", short: "mar" },
+    { name: "April", eng: "april", short: "apr" },
+    { name: "Mei", eng: "may", short: "mei" },
+    { name: "Juni", eng: "june", short: "jun" },
+    { name: "Juli", eng: "july", short: "jul" },
+    { name: "Agustus", eng: "august", short: "aug" },
+    { name: "September", eng: "september", short: "sep" },
+    { name: "Oktober", eng: "october", short: "oct" },
+    { name: "November", eng: "november", short: "nov" },
+    { name: "Desember", eng: "december", short: "dec" }
+  ];
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonthIndex = currentDate.getMonth();
+  const currentMonthName = months[currentMonthIndex].name;
+
+  // Calendar Days Calculation
+  const daysInMonth = useMemo(() => {
+    return new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+  }, [currentYear, currentMonthIndex]);
+
+  const startOffset = useMemo(() => {
+    const firstDay = new Date(currentYear, currentMonthIndex, 1).getDay();
+    // Adjust so week starts on Monday (Senin)
+    return firstDay === 0 ? 6 : firstDay - 1;
+  }, [currentYear, currentMonthIndex]);
+
+  // Function to change months
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonthIndex + 1, 1));
+    setSelectedDay(null);
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentYear, currentMonthIndex - 1, 1));
+    setSelectedDay(null);
+  };
+
+  const setToday = () => {
+    setCurrentDate(new Date()); // Actual today's date
+    setSelectedDay(new Date().getDate());
+  };
+
+  // Highly robust helper to check if an event falls on a specific calendar day (handles single, range, and multi-month dates)
+  const isEventOnDay = (event: TimelineEvent, day: number, monthIdx: number, year: number) => {
+    const dr = event.date_range.toLowerCase();
+    
+    // Find all numbers in the date range string (ignoring any custom dash characters)
+    const matchNumbers = dr.match(/\d+/g);
+    if (!matchNumbers) return false;
+    
+    // Find all months mentioned in the string, maintaining appearance order
+    const monthsFound: { index: number; name: string }[] = [];
+    const indonesianMonths = [
+      "januari", "februari", "maret", "april", "mei", "juni", 
+      "juli", "agustus", "september", "oktober", "november", "desember"
+    ];
+    const englishMonths = [
+      "january", "february", "march", "april", "may", "june", 
+      "july", "august", "september", "october", "november", "december"
+    ];
+    
+    indonesianMonths.forEach((m, idx) => {
+      if (dr.includes(m)) monthsFound.push({ index: idx, name: m });
+    });
+    
+    if (monthsFound.length === 0) {
+      englishMonths.forEach((m, idx) => {
+        if (dr.includes(m)) monthsFound.push({ index: idx, name: m });
+      });
+    }
+    
+    // Sort by order of appearance in the string
+    monthsFound.sort((a, b) => dr.indexOf(a.name) - dr.indexOf(b.name));
+    
+    if (monthsFound.length === 0) return false;
+    
+    const currentCellDate = new Date(year, monthIdx, day);
+    
+    // Case 1: Multi-month range e.g. "29 Juni – 3 Juli 2026"
+    if (monthsFound.length >= 2 && matchNumbers.length >= 2) {
+      const startDay = parseInt(matchNumbers[0], 10);
+      const startMonth = monthsFound[0].index;
+      const endDay = parseInt(matchNumbers[1], 10);
+      const endMonth = monthsFound[1].index;
+      const eventYear = parseInt(matchNumbers[matchNumbers.length - 1], 10) || year;
+      
+      const startDate = new Date(eventYear, startMonth, startDay);
+      const endDate = new Date(eventYear, endMonth, endDay);
+      
+      return currentCellDate >= startDate && currentCellDate <= endDate;
+    }
+    
+    // Case 2: Single-month range e.g. "8 – 26 Juni 2026"
+    if (monthsFound.length === 1 && matchNumbers.length >= 2) {
+      const startDay = parseInt(matchNumbers[0], 10);
+      const endDay = parseInt(matchNumbers[1], 10);
+      const eventMonth = monthsFound[0].index;
+      const eventYear = parseInt(matchNumbers[matchNumbers.length - 1], 10) || year;
+      
+      const startDate = new Date(eventYear, eventMonth, startDay);
+      const endDate = new Date(eventYear, eventMonth, endDay);
+      
+      return currentCellDate >= startDate && currentCellDate <= endDate;
+    }
+    
+    // Case 3: Single day e.g. "4 Juli 2026"
+    if (monthsFound.length === 1 && matchNumbers.length === 2 && parseInt(matchNumbers[1], 10) >= 2000) {
+      const eventDay = parseInt(matchNumbers[0], 10);
+      const eventMonth = monthsFound[0].index;
+      const eventYear = parseInt(matchNumbers[1], 10);
+      
+      const targetDate = new Date(eventYear, eventMonth, eventDay);
+      return currentCellDate.getTime() === targetDate.getTime();
+    }
+    
+    // Case 4: Spans entire month e.g. "Sep 2026"
+    if (monthsFound.length === 1 && matchNumbers.length === 1 && parseInt(matchNumbers[0], 10) >= 2000) {
+      const eventMonth = monthsFound[0].index;
+      return monthIdx === eventMonth && year === parseInt(matchNumbers[0], 10);
+    }
+    
+    // Fallback default simple match
+    return monthIdx === monthsFound[0].index;
+  };
+
+  // Get events for the currently selected day
+  const selectedDayEvents = useMemo(() => {
+    if (selectedDay === null) return [];
+    return events.filter(event => isEventOnDay(event, selectedDay, currentMonthIndex, currentYear));
+  }, [selectedDay, currentMonthIndex, currentYear, events]);
+
+  return (
+    <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
+      {/* Title Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Timeline</h1>
+          <p className="mt-1 text-zinc-500 text-sm">Kelola fase kompetisi, jadwal pengerjaan WebGIS, dan acara mentoring.</p>
+        </div>
+        <div className="flex gap-2">
+          {/* Tabs Toggles */}
+          <div className="bg-zinc-100 p-1 rounded-xl flex gap-1 border border-zinc-200">
+            <button 
+              onClick={() => setActiveTab("list")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                activeTab === "list" 
+                  ? "bg-white text-zinc-950 shadow-sm" 
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <List weight="bold" /> List View
+            </button>
+            <button 
+              onClick={() => setActiveTab("calendar")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                activeTab === "calendar" 
+                  ? "bg-white text-zinc-950 shadow-sm" 
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <CalendarBlank weight="bold" /> Calendar View
+            </button>
+          </div>
+          
+          <Button 
+            onClick={handleAddNewClick}
+            className="bg-zinc-950 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-zinc-800 transition shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            <Plus weight="bold" /> Add Event
+          </Button>
+        </div>
+      </div>
+
+      {/* LIST VIEW TAB */}
+      {activeTab === "list" && (
+        <Card className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="space-y-0 relative before:absolute before:inset-y-2 before:left-[147px] before:w-[2px] before:bg-zinc-100">
+            {events.map((event, index) => {
+              let dotColor = "bg-zinc-300 ring-zinc-100";
+              let cardBg = "bg-zinc-50 hover:bg-zinc-100/70";
+              let cardBorder = "border-zinc-200";
+              let badgeBg = "bg-zinc-100";
+              let badgeText = "text-zinc-800";
+              let badgeBorder = "border-zinc-200";
+
+              if (event.type.toLowerCase().includes("announcement")) {
+                dotColor = "bg-amber-500 ring-amber-100";
+                cardBg = "bg-amber-50/40 hover:bg-amber-50/70";
+                cardBorder = "border-amber-100";
+                badgeBg = "bg-amber-100";
+                badgeText = "text-amber-800";
+                badgeBorder = "border-amber-200";
+              } else if (event.type.toLowerCase().includes("mentoring") || event.type.toLowerCase().includes("technical")) {
+                dotColor = "bg-indigo-500 ring-indigo-100";
+                cardBg = "bg-indigo-50/40 hover:bg-indigo-50/70";
+                cardBorder = "border-indigo-100";
+                badgeBg = "bg-indigo-100";
+                badgeText = "text-indigo-800";
+                badgeBorder = "border-indigo-200";
+              } else if (event.type.toLowerCase().includes("ai") || event.type.toLowerCase().includes("phase") || event.type.toLowerCase().includes("registration")) {
+                dotColor = "bg-emerald-500 ring-emerald-100";
+                cardBg = "bg-emerald-50/40 hover:bg-emerald-50/70";
+                cardBorder = "border-emerald-100";
+                badgeBg = "bg-emerald-100";
+                badgeText = "text-emerald-800";
+                badgeBorder = "border-emerald-200";
+              }
+
+              const isActivePhase = event.id === activeEventId;
+
+              // Calculate associated tasks dynamically
+              const ws = getAssociatedWorkstreams(event.type || "General", event.phase);
+              const assocTasks = tasks.filter(task => ws.includes(task.workstream));
+              
+              // Progress calculation
+              const totalTasks = assocTasks.length;
+              const completedTasks = assocTasks.filter(t => t.status === 'Done').length;
+              const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+              return (
+                <div key={event.id} className="flex flex-col sm:flex-row gap-4 sm:gap-10 items-start pb-8 relative group">
+                  {/* Date column */}
+                  <div className="w-full sm:w-32 flex-shrink-0 text-sm font-semibold text-zinc-500 pt-1.5 flex sm:justify-end items-center sm:text-right gap-2 sm:gap-0">
+                    <CalendarBlank className="sm:hidden text-zinc-400" />
+                    {event.date_range}
+                  </div>
+                  
+                  {/* Timeline dot */}
+                  <div className="absolute left-[142px] top-2.5 hidden sm:flex items-center justify-center z-10">
+                    <div className={`w-3.5 h-3.5 ${dotColor} rounded-full ring-4 transition-all duration-300 group-hover:scale-125 ${
+                      isActivePhase ? "animate-pulse ring-indigo-200 bg-indigo-600" : ""
+                    }`}></div>
+                  </div>
+
+                  {/* Event content card */}
+                  <div className={`flex-1 border ${cardBorder} ${cardBg} rounded-2xl p-5 transition-all duration-300 shadow-sm hover:shadow-md cursor-default relative overflow-hidden ${
+                    isActivePhase ? "ring-2 ring-indigo-500/30 border-indigo-200" : ""
+                  }`}>
+                    {isActivePhase && (
+                      <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-bl-xl flex items-center gap-1.5 shadow-sm">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                        </span>
+                        Aktif
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-start mb-2 pr-12 sm:pr-0">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-bold text-zinc-900 text-base group-hover:text-zinc-950 transition-colors flex items-center gap-2">
+                          {event.phase}
+                          {isActivePhase && <Sparkle weight="fill" className="text-indigo-600 text-sm animate-pulse" />}
+                        </h3>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleEditClick(event); }}
+                          className="text-[10px] bg-zinc-100 hover:bg-zinc-200 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 transition cursor-pointer font-bold"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <span className={`${badgeBg} ${badgeText} text-[10px] px-2.5 py-1 rounded-lg font-semibold border ${badgeBorder}`}>
+                        {event.type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-zinc-600 leading-relaxed">{event.description}</p>
+                    
+                    {/* Progress details if it's the active phase */}
+                    {isActivePhase && (
+                      <div className="mt-4 pt-4 border-t border-indigo-100/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex justify-between text-xs font-semibold text-zinc-700 mb-1">
+                            <span>Progress Pengerjaan Tahap Ini</span>
+                            <span className="text-indigo-600">{progressPercentage}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-zinc-200/70 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 mt-1 sm:mt-0 font-medium">
+                          <Info size={16} className="flex-shrink-0" />
+                          <span>
+                            {totalTasks > 0 
+                              ? `${completedTasks} dari ${totalTasks} task telah diselesaikan pada fase ini.` 
+                              : "Belum ada task yang ditugaskan untuk tahap ini."}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Associated Tasks */}
+                    {assocTasks.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-zinc-200/80 space-y-2">
+                        <h4 className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                          <ClipboardText size={14} className="text-indigo-650 animate-pulse" /> Associated Workstream Tasks ({assocTasks.length})
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {assocTasks.map(task => (
+                            <div key={task.id} className="p-2.5 bg-white/60 border border-zinc-200 rounded-xl flex items-center justify-between text-[11px] hover:bg-white hover:shadow-xs transition duration-200">
+                              <div className="truncate pr-2">
+                                <p className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</p>
+                                <p className="text-[10px] text-zinc-400 font-semibold">{task.pic} • {task.deadline}</p>
+                              </div>
+                              <select 
+                                value={task.status}
+                                onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
+                                className={`px-1 py-1 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
+                                  task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                  task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                  task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
+                                  'bg-zinc-100 text-zinc-650 border-zinc-200'
+                                }`}
+                                style={{ textAlignLast: "center" }}
+                              >
+                                <option value="Not Started" className="bg-white text-zinc-800">Not Started</option>
+                                <option value="In Progress" className="bg-white text-blue-700">In Progress</option>
+                                <option value="Waiting Review" className="bg-white text-amber-600">Waiting Review</option>
+                                <option value="Blocked" className="bg-white text-rose-700">Blocked</option>
+                                <option value="Done" className="bg-white text-emerald-700">Done</option>
+                                <option value="Delayed" className="bg-white text-zinc-600">Delayed</option>
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* CALENDAR VIEW TAB */}
+      {activeTab === "calendar" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: The Main Calendar Grid */}
+          <Card className="lg:col-span-2 bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              {/* Calendar Month Header Selector */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-100">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-zinc-900">{currentMonthName} {currentYear}</h2>
+                  <span className="text-xs bg-zinc-100 text-zinc-500 font-semibold px-2 py-0.5 rounded-full">
+                    {events.length} Agenda
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    onClick={prevMonth}
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-lg text-zinc-600 border-zinc-200 hover:bg-zinc-50 cursor-pointer"
+                  >
+                    <CaretLeft size={16} />
+                  </Button>
+                  <Button 
+                    onClick={setToday}
+                    variant="outline"
+                    className="h-8 text-xs font-semibold px-3 border-zinc-200 hover:bg-zinc-50 rounded-lg cursor-pointer"
+                  >
+                    Hari Ini
+                  </Button>
+                  <Button 
+                    onClick={nextMonth}
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 rounded-lg text-zinc-600 border-zinc-200 hover:bg-zinc-50 cursor-pointer"
+                  >
+                    <CaretRight size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Days of Week Header */}
+              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((dayName, idx) => (
+                  <div key={idx} className="text-xs font-bold text-zinc-400 py-1.5 uppercase tracking-wider">
+                    {dayName}
+                  </div>
+                ))}
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-1.5 min-h-[300px]">
+                {/* Empty Offset Cells */}
+                {Array.from({ length: startOffset }).map((_, idx) => (
+                  <div key={`offset-${idx}`} className="bg-zinc-50/50 rounded-xl border border-zinc-100/30 opacity-40 min-h-[70px]"></div>
+                ))}
+
+                {/* Days of Month Cells */}
+                {Array.from({ length: daysInMonth }).map((_, idx) => {
+                  const day = idx + 1;
+                  const isSelected = selectedDay === day;
+                  
+                  const todayDate = new Date();
+                  const isToday = currentYear === todayDate.getFullYear() && currentMonthIndex === todayDate.getMonth() && day === todayDate.getDate();
+
+                  // Find events occurring on this specific day
+                  const dayEvents = events.filter(event => isEventOnDay(event, day, currentMonthIndex, currentYear));
+
+                  return (
+                    <button
+                      key={`day-${day}`}
+                      onClick={() => setSelectedDay(day)}
+                      className={`min-h-[70px] p-1.5 rounded-xl border flex flex-col justify-between items-stretch text-left transition-all duration-200 group relative cursor-pointer ${
+                        isSelected 
+                          ? "bg-zinc-950 border-zinc-950 text-white shadow-md shadow-zinc-300 scale-[1.02] z-10" 
+                          : isToday 
+                          ? "bg-indigo-50/40 border-indigo-300 text-zinc-900 shadow-sm"
+                          : "bg-white border-zinc-150 text-zinc-900 hover:bg-zinc-50 hover:border-zinc-300"
+                      }`}
+                    >
+                      {/* Day Number */}
+                      <div className="flex justify-between items-center w-full">
+                        <span className={`text-xs font-bold ${
+                          isSelected 
+                            ? "text-white" 
+                            : isToday 
+                            ? "text-indigo-600 bg-indigo-100 w-5 h-5 flex items-center justify-center rounded-full text-[10px]" 
+                            : "text-zinc-500 group-hover:text-zinc-800"
+                        }`}>
+                          {day}
+                        </span>
+                        {isToday && !isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                        )}
+                      </div>
+
+                      {/* Event Indicators Stack */}
+                      <div className="space-y-0.5 mt-1.5">
+                        {dayEvents.map((event) => {
+                          let badgeStyle = "bg-zinc-100 text-zinc-800 border-zinc-200";
+                          if (event.type.toLowerCase().includes("announcement") || event.type.toLowerCase().includes("submission")) {
+                            badgeStyle = isSelected ? "bg-amber-500/20 text-amber-200 border-amber-500/30" : "bg-amber-100 text-amber-800 border-amber-200";
+                          } else if (event.type.toLowerCase().includes("mentoring") || event.type.toLowerCase().includes("technical")) {
+                            badgeStyle = isSelected ? "bg-indigo-500/20 text-indigo-200 border-indigo-500/30" : "bg-indigo-100 text-indigo-800 border-indigo-250";
+                          } else if (event.type.toLowerCase().includes("ai") || event.type.toLowerCase().includes("phase") || event.type.toLowerCase().includes("registration")) {
+                            badgeStyle = isSelected ? "bg-emerald-500/20 text-emerald-250 border-emerald-500/30" : "bg-emerald-100 text-emerald-800 border-emerald-200";
+                          }
+                          
+                          // Short phase title to fit in calendar cell
+                          const shortPhase = event.phase.split("—")[0].replace("Pembukaan ", "").replace("Technical ", "").replace("Pengumuman ", "").replace("Pengumpulan ", "");
+                          
+                          return (
+                            <div 
+                              key={event.id} 
+                              className={`text-[9px] font-bold px-1 py-0.5 rounded border truncate transition-all duration-200 ${badgeStyle}`}
+                              title={event.phase}
+                            >
+                              {shortPhase}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Legend Indicators */}
+            <div className="mt-6 pt-4 border-t border-zinc-100 flex flex-wrap gap-4 text-xs font-semibold text-zinc-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-emerald-500"></span> Ingest, Reg & Phase
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-indigo-500"></span> Mentoring & Technical
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-amber-500"></span> Announcement & Submit
+              </span>
+            </div>
+          </Card>
+
+          {/* Right: Selected Day Event Detail Panel */}
+          <div className="lg:col-span-1 space-y-4">
+            <Card className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between">
+              <div>
+                <div className="border-b border-zinc-100 pb-4 mb-4 flex items-center justify-between">
+                  <h3 className="font-bold text-zinc-950 text-base">Detail Agenda</h3>
+                  {selectedDay !== null && (
+                    <span className="text-xs bg-zinc-100 border border-zinc-200 font-bold px-3 py-1 rounded-xl text-zinc-950 shadow-sm">
+                      {selectedDay} {currentMonthName} 2026
+                    </span>
+                  )}
+                </div>
+
+                {selectedDay === null ? (
+                  <div className="py-12 text-center text-zinc-400 space-y-2">
+                    <CalendarBlank size={32} className="mx-auto text-zinc-300" />
+                    <p className="text-xs font-medium">Pilih tanggal pada kalender untuk melihat detail agenda.</p>
+                  </div>
+                ) : selectedDayEvents.length === 0 ? (
+                  <div className="py-12 text-center text-zinc-400 space-y-2">
+                    <Info size={32} className="mx-auto text-zinc-300" />
+                    <p className="text-xs font-medium">Tidak ada agenda pengerjaan di tanggal ini.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                    {selectedDayEvents.map((event) => {
+                      let badgeBg = "bg-zinc-100 text-zinc-800 border-zinc-200";
+                      if (event.type.toLowerCase().includes("announcement") || event.type.toLowerCase().includes("submission")) {
+                        badgeBg = "bg-amber-100 text-amber-800 border-amber-250";
+                      } else if (event.type.toLowerCase().includes("mentoring") || event.type.toLowerCase().includes("technical")) {
+                        badgeBg = "bg-indigo-100 text-indigo-800 border-indigo-250";
+                      } else if (event.type.toLowerCase().includes("ai") || event.type.toLowerCase().includes("phase") || event.type.toLowerCase().includes("registration")) {
+                        badgeBg = "bg-emerald-100 text-emerald-800 border-emerald-250";
+                      }
+
+                      const isCurrentPhase = event.id === activeEventId;
+
+                      return (
+                        <div 
+                          key={event.id} 
+                          className={`p-4 rounded-2xl border transition-all duration-300 ${
+                            isCurrentPhase 
+                              ? "bg-indigo-50/40 border-indigo-150 ring-2 ring-indigo-50/50" 
+                              : "bg-zinc-50 border-zinc-150"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border tracking-wider ${badgeBg}`}>
+                              {event.type}
+                            </span>
+                            {isCurrentPhase && (
+                              <span className="text-[9px] font-bold text-white bg-indigo-600 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                                ● Aktif
+                              </span>
+                            )}
+                          </div>
+                          
+                          <h4 className="font-bold text-zinc-900 text-sm">{event.phase}</h4>
+                          <p className="text-[11px] font-semibold text-zinc-400 mt-1 flex items-center gap-1">
+                            <CalendarBlank size={12} /> {event.date_range}
+                          </p>
+                          <p className="text-xs text-zinc-600 mt-2 leading-relaxed">
+                            {event.description}
+                          </p>
+
+                          {/* Associated Tasks */}
+                          {(() => {
+                            const ws = getAssociatedWorkstreams(event.type || "General", event.phase);
+                            const assocTasks = tasks.filter(task => ws.includes(task.workstream));
+                            if (assocTasks.length === 0) return null;
+                            
+                            return (
+                              <div className="mt-3 pt-3 border-t border-zinc-200/80 space-y-1.5">
+                                <p className="text-[10px] font-extrabold text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                                  <ClipboardText size={12} className="text-indigo-600" /> Workstream Tasks ({assocTasks.length})
+                                </p>
+                                <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-0.5">
+                                  {assocTasks.map(task => (
+                                    <div key={task.id} className="p-2 bg-white border border-zinc-200 rounded-xl flex items-center justify-between text-[10px] hover:shadow-xs transition duration-200">
+                                      <div className="truncate pr-1.5">
+                                        <p className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</p>
+                                        <p className="text-[9px] text-zinc-400 font-semibold">{task.pic} • {task.deadline}</p>
+                                      </div>
+                                      <select 
+                                        value={task.status}
+                                        onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
+                                        className={`px-1 py-1 rounded font-extrabold uppercase text-[8px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
+                                          task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                          task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                          task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
+                                          'bg-zinc-100 text-zinc-600 border-zinc-200'
+                                        }`}
+                                        style={{ textAlignLast: "center" }}
+                                      >
+                                        <option value="Not Started" className="bg-white text-zinc-800">Not Started</option>
+                                        <option value="In Progress" className="bg-white text-blue-700">In Progress</option>
+                                        <option value="Waiting Review" className="bg-white text-amber-600">Waiting Review</option>
+                                        <option value="Blocked" className="bg-white text-rose-700">Blocked</option>
+                                        <option value="Done" className="bg-white text-emerald-700">Done</option>
+                                        <option value="Delayed" className="bg-white text-zinc-600">Delayed</option>
+                                      </select>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              <div className="pt-6 border-t border-zinc-100 text-[11px] text-zinc-400 font-semibold flex items-center gap-2">
+                <Info size={14} className="text-indigo-500" />
+                <span>Simulasi timeline MAPID Catalyst kompetisi 2026.</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Mock Add Event Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-white border border-zinc-200 rounded-3xl p-6 shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <h3 className="font-bold text-lg text-zinc-900">{isEditing ? "Edit Agenda" : "Tambah Agenda Baru"}</h3>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-zinc-400 hover:text-zinc-600 font-bold text-xl leading-none cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Nama Fase / Judul Agenda</label>
+                <input 
+                  type="text" 
+                  value={editForm.phase || ""}
+                  onChange={(e) => setEditForm({...editForm, phase: e.target.value})}
+                  placeholder="Contoh: Fase 3: Integrasi Data WebGIS" 
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white" 
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Rentang Tanggal</label>
+                  <input 
+                    type="text" 
+                    value={editForm.date_range || ""}
+                    onChange={(e) => setEditForm({...editForm, date_range: e.target.value})}
+                    placeholder="Contoh: 1 - 15 Juni 2026" 
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tipe Agenda</label>
+                  <select 
+                    value={editForm.type || "Registration"}
+                    onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white"
+                  >
+                    <option value="Registration">Registration</option>
+                    <option value="Phase Ingestion">Phase Ingestion</option>
+                    <option value="Technical Meeting">Technical Meeting</option>
+                    <option value="Field Mentoring">Field Mentoring</option>
+                    <option value="AI Implementation">AI Implementation</option>
+                    <option value="Submission">Submission</option>
+                    <option value="Announcement">Announcement</option>
+                    <option value="General Milestone">General Milestone</option>
+                    <option value="Survey Phase">Survey Phase</option>
+                    <option value="Development Phase">Development Phase</option>
+                    <option value="Judging Phase">Judging Phase</option>
+                    <option value="Main Event Ops">Main Event Ops</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Deskripsi Agenda</label>
+                <textarea 
+                  rows={3}
+                  value={editForm.description || ""}
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  placeholder="Tuliskan detail pekerjaan atau agenda di sini..." 
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white" 
+                  required
+                ></textarea>
+              </div>
+
+              <div className="flex justify-between items-center pt-3">
+                {isEditing ? (
+                  <Button 
+                    type="button"
+                    onClick={() => handleDelete(editForm.id as string)}
+                    variant="ghost"
+                    className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    Hapus
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
+                <div className="flex gap-2">
+                  <Button 
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    variant="outline"
+                    className="px-4 py-2 border-zinc-200 rounded-xl text-xs font-semibold hover:bg-zinc-50 cursor-pointer"
+                  >
+                    Batal
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Simpan Agenda
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
