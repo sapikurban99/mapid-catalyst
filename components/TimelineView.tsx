@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { 
   CalendarBlank, 
   List, 
+  ChartBar,
   CaretLeft, 
   CaretRight, 
   Plus, 
@@ -299,8 +300,303 @@ const getAssociatedWorkstreams = (type: string, name: string): string[] => {
   return uniqueList.length > 0 ? uniqueList : ["Program Management"];
 };
 
+// ─── Gantt Chart Component ───────────────────────────────────────────────
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+function daysBetween(a: Date, b: Date) {
+  return Math.ceil((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getEventStyle(event: TimelineEvent) {
+  const t = event.type.toLowerCase();
+  if (t.includes("announcement") || t.includes("submission"))
+    return { bar: "bg-amber-500", bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", light: "bg-amber-400/20" };
+  if (t.includes("mentoring") || t.includes("technical"))
+    return { bar: "bg-indigo-500", bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-800", light: "bg-indigo-400/20" };
+  if (t.includes("ai") || t.includes("phase") || t.includes("registration"))
+    return { bar: "bg-emerald-500", bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-800", light: "bg-emerald-400/20" };
+  return { bar: "bg-zinc-500", bg: "bg-zinc-50", border: "border-zinc-200", text: "text-zinc-700", light: "bg-zinc-400/20" };
+}
+
+function GanttChart({
+  events,
+  tasks,
+  activeEventId,
+  handleTaskStatusChange
+}: {
+  events: TimelineEvent[];
+  tasks: Task[];
+  activeEventId: string | null;
+  handleTaskStatusChange: (taskId: string, newStatus: Task["status"]) => void;
+}) {
+  // Parse all events into date ranges
+  const ranges = useMemo(() => {
+    return events
+      .map(e => ({ event: e, range: parseDateRangeStr(e.date_range) }))
+      .filter((r): r is { event: TimelineEvent; range: { start: Date; end: Date } } => r.range !== null)
+      .sort((a, b) => a.range.start.getTime() - b.range.start.getTime());
+  }, [events]);
+
+  // Global timeline boundaries
+  const timeline = useMemo(() => {
+    if (ranges.length === 0) return null;
+    let min = ranges[0].range.start;
+    let max = ranges[0].range.end;
+    for (const r of ranges) {
+      if (r.range.start < min) min = r.range.start;
+      if (r.range.end > max) max = r.range.end;
+    }
+    // Pad 3 days before & after for breathing room
+    min = new Date(min.getFullYear(), min.getMonth(), min.getDate() - 3);
+    max = new Date(max.getFullYear(), max.getMonth(), max.getDate() + 3);
+    return { start: min, end: max, totalDays: daysBetween(min, max) };
+  }, [ranges]);
+
+  // Generate month columns for the header
+  const monthColumns = useMemo(() => {
+    if (!timeline) return [];
+    const cols: { label: string; month: number; year: number; left: number; width: number }[] = [];
+    let cursor = new Date(timeline.start.getFullYear(), timeline.start.getMonth(), 1);
+    const end = timeline.end;
+    while (cursor <= end) {
+      const monthStart = new Date(cursor);
+      const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      const clampStart = cursor < timeline.start ? timeline.start : cursor;
+      const clampEnd = monthEnd > end ? end : monthEnd;
+      const left = daysBetween(timeline.start, clampStart) / timeline.totalDays * 100;
+      const width = daysBetween(clampStart, clampEnd) / timeline.totalDays * 100;
+      if (width > 0) {
+        cols.push({
+          label: MONTHS_SHORT[cursor.getMonth()],
+          month: cursor.getMonth(),
+          year: cursor.getFullYear(),
+          left,
+          width
+        });
+      }
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+    return cols;
+  }, [timeline]);
+
+  // Today indicator position
+  const todayPos = useMemo(() => {
+    if (!timeline) return null;
+    const now = new Date();
+    if (now < timeline.start || now > timeline.end) return null;
+    return daysBetween(timeline.start, now) / timeline.totalDays * 100;
+  }, [timeline]);
+
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+
+  if (!timeline || ranges.length === 0) {
+    return (
+      <Card className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm text-center text-zinc-400">
+        <ChartBar size={40} className="mx-auto text-zinc-200 mb-2" />
+        <p className="text-sm font-semibold">Tidak ada data untuk ditampilkan di Gantt chart.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-white border border-zinc-200 rounded-3xl p-4 sm:p-6 shadow-sm overflow-hidden">
+      <div className="overflow-x-auto scrollbar-thin">
+        <div className="min-w-[700px]">
+          {/* Month Headers */}
+          <div className="relative h-10 mb-1">
+            {monthColumns.map((col, i) => (
+              <div
+                key={i}
+                className="absolute top-0 h-full flex items-end pb-1.5 border-l border-zinc-100 first:border-l-0"
+                style={{ left: `${col.left}%`, width: `${col.width}%` }}
+              >
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider pl-1">
+                  {col.label} {col.year}
+                </span>
+              </div>
+            ))}
+            {/* Today line */}
+            {todayPos !== null && (
+              <div className="absolute top-0 bottom-0 w-[2px] bg-rose-400 z-10" style={{ left: `${todayPos}%` }}>
+                <div className="w-2 h-2 rounded-full bg-rose-400 -ml-[3px]"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Grid lines (week markers) */}
+          <div className="relative h-0 mb-0">
+            {monthColumns.map((col, i) => (
+              <div
+                key={`grid-${i}`}
+                className="absolute top-0 w-px h-full bg-zinc-100/50"
+                style={{ left: `${col.left}%` }}
+              />
+            ))}
+          </div>
+
+          {/* Rows */}
+          <div className="space-y-2">
+            {ranges.map(({ event, range }) => {
+              const isActive = event.id === activeEventId;
+              const style = getEventStyle(event);
+              const leftPct = daysBetween(timeline.start, range.start) / timeline.totalDays * 100;
+              const widthPct = daysBetween(range.start, range.end) / timeline.totalDays * 100;
+              const isExpanded = expandedEvent === event.id;
+
+              const ws = getAssociatedWorkstreams(event.type, event.phase);
+              const assocTasks = tasks.filter(t => ws.includes(t.workstream));
+              const doneCount = assocTasks.filter(t => t.status === "Done").length;
+              const progress = assocTasks.length > 0 ? Math.round(doneCount / assocTasks.length * 100) : 0;
+
+              return (
+                <div key={event.id} className="group">
+                  {/* Row */}
+                  <div
+                    className={`relative flex items-center rounded-xl border transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? "border-indigo-200 bg-indigo-50/30 shadow-sm"
+                        : "border-zinc-100 hover:border-zinc-200 bg-white hover:bg-zinc-50/50"
+                    } ${isExpanded ? "shadow-sm" : ""}`}
+                    onClick={() => setExpandedEvent(isExpanded ? null : event.id)}
+                  >
+                    {/* Phase name (fixed left) */}
+                    <div className="flex items-center gap-2 w-[200px] shrink-0 px-3 py-3">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${style.bar}`} />
+                      <div className="min-w-0">
+                        <p className={`text-xs font-bold truncate ${isActive ? "text-zinc-950" : "text-zinc-700"}`}>
+                          {event.phase}
+                        </p>
+                        <p className="text-[9px] text-zinc-400 font-medium">{event.date_range}</p>
+                      </div>
+                    </div>
+
+                    {/* Bar area */}
+                    <div className="flex-1 relative h-[36px] mr-3">
+                      {/* Background grid */}
+                      {monthColumns.map((col, i) => (
+                        <div
+                          key={i}
+                          className="absolute inset-y-0 border-l border-zinc-100/40"
+                          style={{ left: `${col.left}%`, width: `${col.width}%` }}
+                        />
+                      ))}
+
+                      {/* Today indicator vertical line */}
+                      {todayPos !== null && (
+                        <div className="absolute top-0 bottom-0 w-[2px] bg-rose-400/60 z-10" style={{ left: `${todayPos}%` }} />
+                      )}
+
+                      {/* Event bar */}
+                      <div
+                        className={`absolute top-1/2 -translate-y-1/2 h-6 rounded-md ${style.bar} transition-all duration-300 hover:h-7 hover:shadow-md flex items-center px-2 min-w-[8px] ${
+                          isActive ? "ring-2 ring-indigo-400/40" : ""
+                        }`}
+                        style={{ left: `${leftPct}%`, width: `${Math.max(widthPct, 1.5)}%` }}
+                      >
+                        {widthPct > 8 && (
+                          <span className={`text-[9px] font-bold text-white truncate w-full ${widthPct < 15 ? "opacity-0 group-hover:opacity-100" : ""}`}>
+                            {event.type}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Active badge */}
+                      {isActive && (
+                        <div className="absolute -top-2 right-1 bg-indigo-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm z-10">
+                          <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                          Aktif
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chevron/expand */}
+                    <div className="pr-3 text-zinc-300 group-hover:text-zinc-500 transition-colors">
+                      <svg className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 12 12">
+                        <path stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" d="M3 4.5L6 7.5L9 4.5" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Expanded detail panel */}
+                  {isExpanded && (
+                    <div className="ml-[208px] mt-1 mb-2 p-3 bg-zinc-50 border border-zinc-100 rounded-xl space-y-2 animate-[fadeIn_0.2s_ease-in-out]">
+                      <p className="text-xs text-zinc-600 leading-relaxed">{event.description}</p>
+
+                      {/* Tasks progress */}
+                      {assocTasks.length > 0 && (
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${progress}%` }} />
+                          </div>
+                          <span className="text-[10px] font-bold text-zinc-500 shrink-0">
+                            {doneCount}/{assocTasks.length} tasks
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Associated tasks mini-list */}
+                      {assocTasks.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Workstream Tasks</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {assocTasks.map(task => (
+                              <div key={task.id} className="flex items-center justify-between gap-2 p-1.5 bg-white border border-zinc-100 rounded-lg text-[10px]">
+                                <span className="font-semibold text-zinc-700 truncate">{task.name}</span>
+                                <select
+                                  value={task.status}
+                                  onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
+                                  className={`px-1 py-0.5 rounded font-extrabold uppercase text-[8px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none ${
+                                    task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                    task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                    task.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                    'bg-zinc-100 text-zinc-600 border-zinc-200'
+                                  }`}
+                                >
+                                  <option value="Not Started">Not Started</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Waiting Review">Waiting Review</option>
+                                  <option value="Blocked">Blocked</option>
+                                  <option value="Done">Done</option>
+                                  <option value="Delayed">Delayed</option>
+                                </select>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-6 pt-4 border-t border-zinc-100 flex flex-wrap gap-4 text-[10px] font-semibold text-zinc-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> Phase & Registration
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded bg-indigo-500" /> Mentoring & Technical
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded bg-amber-500" /> Announcement & Submit
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded bg-zinc-500" /> General
+            </span>
+            <span className="flex items-center gap-1.5 ml-auto">
+              <div className="w-0.5 h-4 bg-rose-400" /> Today
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function TimelineView({ initialEvents, initialTasks = [] }: { initialEvents: TimelineEvent[]; initialTasks?: Task[] }) {
-  const [activeTab, setActiveTab] = useState<"list" | "calendar">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "calendar" | "gantt">("list");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   
   // Use DB events, fallback to default high-fidelity events if DB is empty
@@ -578,7 +874,17 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                   : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
-              <CalendarBlank weight="bold" /> Calendar View
+              <CalendarBlank weight="bold" /> Calendar
+            </button>
+            <button 
+              onClick={() => setActiveTab("gantt")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                activeTab === "gantt" 
+                  ? "bg-white text-zinc-950 shadow-sm" 
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <ChartBar weight="bold" /> Gantt
             </button>
           </div>
           
@@ -1015,6 +1321,11 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
             </Card>
           </div>
         </div>
+      )}
+
+      {/* GANTT CHART TAB */}
+      {activeTab === "gantt" && (
+        <GanttChart events={events} tasks={tasks} activeEventId={activeEventId} handleTaskStatusChange={handleTaskStatusChange} />
       )}
 
       {/* Mock Add Event Modal */}
