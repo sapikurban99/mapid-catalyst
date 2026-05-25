@@ -835,6 +835,17 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   const [editForm, setEditForm] = useState<Partial<TimelineEvent>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Track which phases have their task list collapsed/hidden
+  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+
+  // Toggle show/hide for a specific phase
+  const togglePhaseTasks = (phaseId: string) => {
+    setCollapsedPhases(prev => ({
+      ...prev,
+      [phaseId]: !prev[phaseId]
+    }));
+  };
 
   const handleEditClick = (event: TimelineEvent) => {
     setEditForm(event);
@@ -1244,96 +1255,114 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                           <span>
                             {totalTasks > 0 
                               ? `${completedTasks} dari ${totalTasks} task telah diselesaikan pada fase ini.` 
-                              : "Belum ada task yang ditugaskan untuk tahap ini."}
+                              : "Belum ada task yang tersedia."}
                           </span>
                         </div>
                       </div>
                     )}
+                    
+                    {/* Associated Tasks (Visual Task Gantt Chart) with show/hide toggle */}
+                    {assocTasks.length > 0 && (() => {
+                      // By default, non-active phases are collapsed unless explicitly toggled in collapsedPhases state
+                      const isCollapsed = collapsedPhases[event.id] !== undefined 
+                        ? collapsedPhases[event.id] 
+                        : !isActivePhase;
 
-                    {/* Associated Tasks (Visual Task Gantt Chart) */}
-                    {assocTasks.length > 0 && (
-                      <div className="mt-5 pt-4 border-t border-zinc-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-black text-zinc-950 flex items-center gap-1.5">
-                            <ClipboardText size={16} className="text-indigo-600 shrink-0" />
-                            Gantt Chart Tugas Fase - Timeline & Deadline
-                          </h4>
-                          <span className="text-[10px] text-zinc-400 font-extrabold bg-zinc-150/40 border border-zinc-200 px-2 py-0.5 rounded-lg">
-                            {completedTasks}/{totalTasks} Selesai
-                          </span>
+                      return (
+                        <div className="mt-5 pt-4 border-t border-zinc-200 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-black text-zinc-950 flex items-center gap-1.5">
+                              <ClipboardText size={16} className="text-indigo-600 shrink-0" />
+                              Daftar Tugas Fase
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-zinc-400 font-extrabold bg-zinc-150/40 border border-zinc-200 px-2 py-0.5 rounded-lg">
+                                {completedTasks}/{totalTasks} Selesai
+                              </span>
+                              <Button 
+                                onClick={(e) => { e.stopPropagation(); togglePhaseTasks(event.id); }}
+                                variant="outline" 
+                                className="h-6 px-2.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-[9px] font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                {isCollapsed ? "Tampilkan Tugas" : "Sembunyikan Tugas"}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {!isCollapsed && (
+                            <div className="space-y-3.5 bg-zinc-50/50 p-4 border border-zinc-200 rounded-2xl animate-[fadeIn_0.2s_ease-out]">
+                              {assocTasks.map(task => {
+                                const phaseRange = parseDateRangeStr(event.date_range);
+                                const taskDate = parseTaskDeadlineStr(task.deadline);
+                                
+                                let pct = 50; 
+                                if (phaseRange && taskDate) {
+                                  const totalRange = phaseRange.end.getTime() - phaseRange.start.getTime();
+                                  const relativeTime = taskDate.getTime() - phaseRange.start.getTime();
+                                  if (totalRange > 0) {
+                                    pct = Math.min(100, Math.max(5, (relativeTime / totalRange) * 100));
+                                  }
+                                }
+                                
+                                let barColor = "bg-blue-500";
+                                if (task.status === "Done") barColor = "bg-emerald-500";
+                                else if (task.status === "Blocked") barColor = "bg-rose-500 animate-pulse";
+                                else if (task.status === "Delayed") barColor = "bg-amber-500 animate-pulse";
+                                else if (task.status === "Waiting Review") barColor = "bg-purple-500";
+
+                                return (
+                                  <div key={task.id} className="space-y-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between text-xs gap-2">
+                                      <div className="min-w-0 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-450" />
+                                        <span className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</span>
+                                        <span className="text-[9px] font-extrabold text-zinc-400 uppercase font-mono">[{task.pic}]</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 font-semibold self-start md:self-center shrink-0">
+                                        <span className="text-[10px] text-zinc-400 bg-white border border-zinc-150 px-2 py-0.5 rounded-lg font-mono">
+                                          📅 Deadline: {task.deadline}
+                                        </span>
+                                        <select 
+                                          value={task.status}
+                                          onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
+                                          className={`px-2 py-0.5 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
+                                            task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                            task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                            task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
+                                            'bg-zinc-100 text-zinc-650 border-zinc-200'
+                                          }`}
+                                          style={{ textAlignLast: "center" }}
+                                        >
+                                          <option value="Not Started">Not Started</option>
+                                          <option value="In Progress">In Progress</option>
+                                          <option value="Waiting Review">Waiting Review</option>
+                                          <option value="Blocked">Blocked</option>
+                                          <option value="Done">Done</option>
+                                          <option value="Delayed">Delayed</option>
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    {/* Visual Timeline Slider bar */}
+                                    <div className="relative h-6 bg-white border border-zinc-200 rounded-lg overflow-hidden flex items-center px-1">
+                                      <div className="absolute inset-y-0 left-0 w-0.5 bg-zinc-200" />
+                                      <div 
+                                        className={`h-4 rounded-md ${barColor} transition-all duration-500 shadow-sm relative flex items-center min-w-[20px]`}
+                                        style={{ width: `${pct}%` }}
+                                      >
+                                        <span className="absolute right-1 text-[8px] font-black text-white px-1">
+                                          {Math.round(pct)}%
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-
-                        <div className="space-y-3.5 bg-zinc-50/50 p-4 border border-zinc-200 rounded-2xl">
-                          {assocTasks.map(task => {
-                            const phaseRange = parseDateRangeStr(event.date_range);
-                            const taskDate = parseTaskDeadlineStr(task.deadline);
-                            
-                            let pct = 50; 
-                            if (phaseRange && taskDate) {
-                              const totalRange = phaseRange.end.getTime() - phaseRange.start.getTime();
-                              const relativeTime = taskDate.getTime() - phaseRange.start.getTime();
-                              if (totalRange > 0) {
-                                pct = Math.min(100, Math.max(5, (relativeTime / totalRange) * 100));
-                              }
-                            }
-                            
-                            let barColor = "bg-blue-500";
-                            if (task.status === "Done") barColor = "bg-emerald-500";
-                            else if (task.status === "Blocked") barColor = "bg-rose-500 animate-pulse";
-                            else if (task.status === "Delayed") barColor = "bg-amber-500 animate-pulse";
-                            else if (task.status === "Waiting Review") barColor = "bg-purple-500";
-
-                            return (
-                              <div key={task.id} className="space-y-2">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between text-xs gap-2">
-                                  <div className="min-w-0 flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-450" />
-                                    <span className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</span>
-                                    <span className="text-[9px] font-extrabold text-zinc-400 uppercase font-mono">[{task.pic}]</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 font-semibold self-start md:self-center shrink-0">
-                                    <span className="text-[10px] text-zinc-400 bg-white border border-zinc-150 px-2 py-0.5 rounded-lg font-mono">
-                                      📅 Deadline: {task.deadline}
-                                    </span>
-                                    <select 
-                                      value={task.status}
-                                      onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
-                                      className={`px-2 py-0.5 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
-                                        task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                        task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                        task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
-                                        'bg-zinc-100 text-zinc-650 border-zinc-200'
-                                      }`}
-                                      style={{ textAlignLast: "center" }}
-                                    >
-                                      <option value="Not Started">Not Started</option>
-                                      <option value="In Progress">In Progress</option>
-                                      <option value="Waiting Review">Waiting Review</option>
-                                      <option value="Blocked">Blocked</option>
-                                      <option value="Done">Done</option>
-                                      <option value="Delayed">Delayed</option>
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {/* Visual Timeline Slider bar */}
-                                <div className="relative h-6 bg-white border border-zinc-200 rounded-lg overflow-hidden flex items-center px-1">
-                                  <div className="absolute inset-y-0 left-0 w-0.5 bg-zinc-200" />
-                                  <div 
-                                    className={`h-4 rounded-md ${barColor} transition-all duration-500 shadow-sm relative flex items-center min-w-[20px]`}
-                                    style={{ width: `${pct}%` }}
-                                  >
-                                    <span className="absolute right-1 text-[8px] font-black text-white px-1">
-                                      {Math.round(pct)}%
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               );
