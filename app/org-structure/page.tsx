@@ -48,20 +48,18 @@ type Task = {
 };
 
 const initialMembers: OrgMember[] = [
-  { id: "11111111-1111-1111-1111-111111111111", name: "Muftia", role: "VP", division: "Management", avatar_color: "bg-zinc-800", email: "email@mapid.co.id", phone: "0811-0000-0000" },
-  { id: "22222222-2222-2222-2222-222222222222", name: "Bagus", role: "CEO", division: "Management", avatar_color: "bg-zinc-900", email: "email@mapid.co.id", phone: "0811-1111-1111" },
+  { id: "11111111-1111-1111-1111-111111111111", name: "Muftia", role: "Advisor", division: "Advisor", avatar_color: "bg-zinc-800", email: "email@mapid.co.id", phone: "0811-0000-0000" },
+  { id: "22222222-2222-2222-2222-222222222222", name: "Bagus", role: "Event Director", division: "Event Director", avatar_color: "bg-zinc-900", email: "email@mapid.co.id", phone: "0811-1111-1111" },
   { id: "33333333-3333-3333-3333-333333333333", name: "Hadi", role: "Project Lead", division: "Steering Committee", avatar_color: "bg-rose-500", email: "sarah.lead@mapid.co.id", phone: "0811-2222-2222" },
   { id: "44444444-4444-4444-4444-444444444444", name: "Lagi Hiring", role: "Program Manager", division: "Program Manager", avatar_color: "bg-teal-600", email: "dina.pm@mapid.co.id", phone: "0812-3333-3333" },
-  { id: "55555555-5555-5555-5555-555555555555", name: "Fariz", role: "Academy Coordinator", division: "Academic & Competition", avatar_color: "bg-indigo-600", email: "ali.academy@mapid.co.id", phone: "0812-4444-4444" },
-  { id: "66666666-6666-6666-6666-666666666666", name: "Data Team", role: "Data Engineers", division: "Data & Spatial Tech", avatar_color: "bg-blue-600", email: "data.engineer@mapid.co.id", phone: "0816-5555-5555" },
-  { id: "77777777-7777-7777-7777-777777777777", name: "Tech Team", role: "Core Tech & Platforms", division: "Data & Spatial Tech", avatar_color: "bg-blue-500", email: "tech.platform@mapid.co.id", phone: "0816-6666-6666" },
-  { id: "88888888-8888-8888-8888-888888888888", name: "Gita", role: "Operations Lead", division: "Data & Spatial Tech", avatar_color: "bg-emerald-600", email: "gita.ops@mapid.co.id", phone: "0814-7777-7777" },
-  { id: "99999999-9999-9999-9999-999999999999", name: "Rudi", role: "Logistics Coordinator", division: "Data & Spatial Tech", avatar_color: "bg-emerald-500", email: "rudi.ops@mapid.co.id", phone: "0814-8888-8888" },
-  { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", name: "Freelance MAPID Community", role: "Main Event Coordinator", division: "Main Event Operational", avatar_color: "bg-orange-600", email: "heri.ops@mapid.co.id", phone: "0819-9999-9999" },
-  { id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", name: "Aulia Freelance Community", role: "Partnership Manager", division: "Sponsorship & Outreach", avatar_color: "bg-purple-600", email: "indra.partner@mapid.co.id", phone: "0815-1010-1010" },
-  { id: "cccccccc-cccc-cccc-cccc-cccccccccccc", name: "Dwi", role: "Marketing", division: "Marketing & Design", avatar_color: "bg-amber-500", email: "rian.design@mapid.co.id", phone: "0813-1212-1212" },
-  { id: "dddddddd-dddd-dddd-dddd-dddddddddddd", name: "Wina", role: "Graphic Designer", division: "Marketing & Design", avatar_color: "bg-amber-400", email: "lia.designer@mapid.co.id", phone: "0813-1313-1313" },
-  { id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", name: "Ica", role: "Peran / Job Title", division: "Marketing & Design", avatar_color: "bg-amber-600", email: "email@mapid.co.id", phone: "0813-1414-1414" }
+  { id: "55555555-5555-5555-5555-555555555555", name: "Fariz", role: "Academic & Competition", division: "Academic & Competition", avatar_color: "bg-indigo-600", email: "ali.academy@mapid.co.id", phone: "0812-4444-4444" },
+  { id: "66666666-6666-6666-6666-666666666666", name: "Data Team", role: "Data Team", division: "Data & Spatial Tech", avatar_color: "bg-blue-600", email: "data.engineer@mapid.co.id", phone: "0816-5555-5555" },
+  { id: "77777777-7777-7777-7777-777777777777", name: "Tech Team", role: "Tech Team", division: "Data & Spatial Tech", avatar_color: "bg-blue-500", email: "tech.platform@mapid.co.id", phone: "0816-6666-6666" },
+  { id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", name: "Freelance MAPID Community", role: "Main Event Operational", division: "Main Event Operational", avatar_color: "bg-orange-600", email: "heri.ops@mapid.co.id", phone: "0819-9999-9999" },
+  { id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", name: "Aulia Freelance Community", role: "Sponsorship & Outreach", division: "Sponsorship & Outreach", avatar_color: "bg-purple-600", email: "indra.partner@mapid.co.id", phone: "0815-1010-1010" },
+  { id: "cccccccc-cccc-cccc-cccc-cccccccccccc", name: "Dwi", role: "Marketing & Design", division: "Marketing & Design", avatar_color: "bg-amber-500", email: "rian.design@mapid.co.id", phone: "0813-1212-1212" },
+  { id: "dddddddd-dddd-dddd-dddd-dddddddddddd", name: "Wina", role: "Marketing & Design", division: "Marketing & Design", avatar_color: "bg-amber-400", email: "lia.designer@mapid.co.id", phone: "0813-1313-1313" },
+  { id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", name: "Ica", role: "Marketing & Design", division: "Marketing & Design", avatar_color: "bg-amber-600", email: "email@mapid.co.id", phone: "0813-1414-1414" }
 ];
 
 const divisions = [
@@ -116,20 +114,18 @@ ALTER TABLE catalyst_org_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public access on catalyst_org_members" ON catalyst_org_members FOR ALL USING (true) WITH CHECK (true);
 
 INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, phone) VALUES
-('Muftia', 'Event Director', 'Event Director', 'bg-zinc-800', 'email@mapid.co.id', '0811-0000-0000'),
-('Bagus', 'Advisor', 'Advisor', 'bg-zinc-900', 'email@mapid.co.id', '0811-1111-1111'),
+('Muftia', 'Advisor', 'Advisor', 'bg-zinc-800', 'email@mapid.co.id', '0811-0000-0000'),
+('Bagus', 'Event Director', 'Event Director', 'bg-zinc-900', 'email@mapid.co.id', '0811-1111-1111'),
 ('Hadi', 'Project Lead', 'Steering Committee', 'bg-rose-500', 'sarah.lead@mapid.co.id', '0811-2222-2222'),
 ('Lagi Hiring', 'Program Manager', 'Program Manager', 'bg-teal-600', 'dina.pm@mapid.co.id', '0812-3333-3333'),
-('Fariz', 'Academy Coordinator', 'Academic & Competition', 'bg-indigo-600', 'ali.academy@mapid.co.id', '0812-4444-4444'),
-('Data Team', 'Data Engineers', 'Data & Spatial Tech', 'bg-blue-600', 'data.engineer@mapid.co.id', '0816-5555-5555'),
-('Tech Team', 'Core Tech & Platforms', 'Data & Spatial Tech', 'bg-blue-500', 'tech.platform@mapid.co.id', '0816-6666-6666'),
-('Gita', 'Operations Lead', 'Data & Spatial Tech', 'bg-emerald-600', 'gita.ops@mapid.co.id', '0814-7777-7777'),
-('Rudi', 'Logistics Coordinator', 'Data & Spatial Tech', 'bg-emerald-500', 'rudi.ops@mapid.co.id', '0814-8888-8888'),
-('Freelance MAPID Community', 'Main Event Coordinator', 'Main Event Operational', 'bg-orange-600', 'heri.ops@mapid.co.id', '0819-9999-9999'),
-('Aulia Freelance Community', 'Partnership Manager', 'Sponsorship & Outreach', 'bg-purple-600', 'indra.partner@mapid.co.id', '0815-1010-1010'),
-('Dwi', 'Marketing', 'Marketing & Design', 'bg-amber-500', 'rian.design@mapid.co.id', '0813-1212-1212'),
-('Wina', 'Graphic Designer', 'Marketing & Design', 'bg-amber-400', 'lia.designer@mapid.co.id', '0813-1313-1313'),
-('Ica', 'Peran / Job Title', 'Marketing & Design', 'bg-amber-600', 'email@mapid.co.id', '0813-1414-1414');`;
+('Fariz', 'Academic & Competition', 'Academic & Competition', 'bg-indigo-600', 'ali.academy@mapid.co.id', '0812-4444-4444'),
+('Data Team', 'Data Team', 'Data & Spatial Tech', 'bg-blue-600', 'data.engineer@mapid.co.id', '0816-5555-5555'),
+('Tech Team', 'Tech Team', 'Data & Spatial Tech', 'bg-blue-500', 'tech.platform@mapid.co.id', '0816-6666-6666'),
+('Freelance MAPID Community', 'Main Event Operational', 'Main Event Operational', 'bg-orange-600', 'heri.ops@mapid.co.id', '0819-9999-9999'),
+('Aulia Freelance Community', 'Sponsorship & Outreach', 'Sponsorship & Outreach', 'bg-purple-600', 'indra.partner@mapid.co.id', '0815-1010-1010'),
+('Dwi', 'Marketing & Design', 'Marketing & Design', 'bg-amber-500', 'rian.design@mapid.co.id', '0813-1212-1212'),
+('Wina', 'Marketing & Design', 'Marketing & Design', 'bg-amber-400', 'lia.designer@mapid.co.id', '0813-1313-1313'),
+('Ica', 'Marketing & Design', 'Marketing & Design', 'bg-amber-600', 'email@mapid.co.id', '0813-1414-1414');`;
 
   useEffect(() => {
     // 1. Fetch live tasks for mapping task count dynamically

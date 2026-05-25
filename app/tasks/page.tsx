@@ -29,6 +29,7 @@ type Task = {
   workstream: string;
   pic: string;
   priority: "High" | "Medium" | "Low";
+  start_date?: string;
   deadline: string;
   status: "Not Started" | "In Progress" | "Waiting Review" | "Blocked" | "Done" | "Delayed";
   dependency?: string;
@@ -38,46 +39,27 @@ type Task = {
 };
 
 const initialTasks: Task[] = [
-  // Program Management
-  { id: "pm-1", name: "Finalize master timeline", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", deadline: "20 Mei 2026", status: "In Progress", notes: "Ensure BINUS main event dates are locked." },
-  { id: "pm-2", name: "Set up weekly sync schedule", workstream: "Program Management", pic: "Hadi / Lead", priority: "Medium", deadline: "22 Mei 2026", status: "Done" },
-  { id: "pm-3", name: "Establish risk register", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", deadline: "25 Mei 2026", status: "In Progress" },
-  
-  // Competition
-  { id: "comp-1", name: "Finalize FAQ peserta", workstream: "Competition", pic: "Fariz / Academy", priority: "High", deadline: "25 Mei 2026", status: "In Progress", dependency: "Guidance final", blocker: "Need confirmation about max team members", doc_link: "https://docs.google.com/document/d/faq", notes: "Update AI and survey budget sections." },
-  { id: "comp-2", name: "Complete PRD & Proposal template", workstream: "Competition", pic: "Fariz / Academy", priority: "High", deadline: "30 Mei 2026", status: "Not Started", doc_link: "https://docs.google.com/document/d/prd-template" },
-  { id: "comp-3", name: "Finalize general guidance document", workstream: "Competition", pic: "Dwi / Marketing", priority: "High", deadline: "28 Mei 2026", status: "Waiting Review", doc_link: "https://docs.google.com/document/d/guideline" },
-  
-  // Dataset
-  { id: "data-1", name: "Prepare Property Go sample dataset", workstream: "Dataset", pic: "Data Team", priority: "High", deadline: "25 Mei 2026", status: "In Progress", notes: "Needs spatial standardization." },
-  { id: "data-2", name: "Clean Menu Go 15 May campaign data", workstream: "Dataset", pic: "Data Team", priority: "High", deadline: "24 Mei 2026", status: "Blocked", blocker: "Format mismatch in region records" },
-  { id: "data-3", name: "Write Data Dictionary & API rules", workstream: "Dataset", pic: "Data Team", priority: "Medium", deadline: "29 Mei 2026", status: "Not Started" },
-  
-  // Survey Activities
-  { id: "srv-1", name: "Draft Survey Guideline & Mission Template", workstream: "Survey Activities", pic: "Gita / Operations", priority: "High", deadline: "31 Mei 2026", status: "In Progress", notes: "Define standard photography and location format." },
-  { id: "srv-2", name: "Formulate survey budget allocation", workstream: "Survey Activities", pic: "Gita / Operations", priority: "High", deadline: "2 Juni 2026", status: "Not Started", notes: "Budget for 50 curated teams." },
-  
-  // Platform & Tech
-  { id: "tech-1", name: "Setup GEO MAPID campaign template", workstream: "Platform & Tech", pic: "Tech Team", priority: "High", deadline: "26 Mei 2026", status: "In Progress" },
-  { id: "tech-2", name: "Write MAPID MAPS basemap guide", workstream: "Platform & Tech", pic: "Tech Team", priority: "Medium", deadline: "4 Juni 2026", status: "Not Started" },
-  
-  // Marketing
-  { id: "mkt-1", name: "Draft landing page copy", workstream: "Marketing", pic: "Rara / Marketing", priority: "High", deadline: "25 Mei 2026", status: "Done", doc_link: "https://docs.google.com/document/d/landing-copy" },
-  { id: "mkt-2", name: "Prepare WA broadcast copy", workstream: "Marketing", pic: "Rara / Marketing", priority: "Low", deadline: "5 Juni 2026", status: "Not Started" },
-  
-  // Design
-  { id: "dsn-1", name: "Finalize Key Visual concept", workstream: "Design", pic: "Designer Team", priority: "High", deadline: "28 Mei 2026", status: "In Progress" },
-  { id: "dsn-2", name: "Create Launch Poster assets", workstream: "Design", pic: "Designer Team", priority: "High", deadline: "2 Juni 2026", status: "Not Started", dependency: "Key Visual" },
-  
-  // Sponsor
-  { id: "sp-1", name: "Finalize sponsor proposal deck & tiering", workstream: "Sponsor", pic: "Aulia / Partnership", priority: "High", deadline: "25 Mei 2026", status: "Blocked", blocker: "Indecision on Silver Tier booths" },
-  { id: "sp-2", name: "Compile initial outreach target list", workstream: "Sponsor", pic: "Aulia / Partnership", priority: "Medium", deadline: "26 Mei 2026", status: "Done" },
-  
-  // Event Ops
-  { id: "evt-1", name: "Finalize BINUS Auditorium requirements", workstream: "Event Ops", pic: "Rudi / Ops", priority: "High", deadline: "10 Juni 2026", status: "In Progress" },
-  
-  // Mentoring
-  { id: "mnt-1", name: "Prepare mentor outline & attendance tracker", workstream: "Mentoring", pic: "Fariz / Academy", priority: "Medium", deadline: "15 Juni 2026", status: "Not Started" }
+  { id: "T001", name: "Finalize master timeline", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", start_date: "1 Mei 2026", deadline: "20 Mei 2026", status: "In Progress", dependency: "Draft timeline", notes: "Output: Master timeline approved" },
+  { id: "T002", name: "Set up weekly sync schedule", workstream: "Program Management", pic: "Hadi / Lead", priority: "Medium", start_date: "18 Mei 2026", deadline: "22 Mei 2026", status: "Done", dependency: "Internal calendar", notes: "Output: Weekly sync schedule" },
+  { id: "T003", name: "Establish risk register", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", start_date: "15 Mei 2026", deadline: "25 Mei 2026", status: "In Progress", dependency: "Project scope", notes: "Output: Risk register" },
+  { id: "T004", name: "Finalize FAQ peserta", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "12 Mei 2026", deadline: "25 Mei 2026", status: "In Progress", dependency: "Guidance draft", notes: "Output: FAQ final" },
+  { id: "T005", name: "Complete PRD & Proposal template", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "19 Mei 2026", deadline: "30 Mei 2026", status: "Not Started", dependency: "Existing template", notes: "Output: Final PRD & proposal template" },
+  { id: "T006", name: "Finalize general guidance document", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "15 Mei 2026", deadline: "28 Mei 2026", status: "Waiting Review", dependency: "Latest guidance draft", notes: "Output: Published guidance" },
+  { id: "T007", name: "Prepare Property Go sample dataset", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "In Progress", dependency: "Raw Property Go data", notes: "Output: Sample dataset" },
+  { id: "T008", name: "Write Data Dictionary & API rules", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "Medium", start_date: "8 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "Dataset schema", notes: "Output: Data dictionary & API rules" },
+  { id: "T009", name: "Setup GEO MAPID campaign template", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "In Progress", dependency: "GEO MAPID setup", notes: "Output: GEO MAPID campaign template" },
+  { id: "T010", name: "Write MAPID MAPS basemap guide", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "Medium", start_date: "15 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "MAPID MAPS access", notes: "Output: Basemap guide" },
+  { id: "T011", name: "Prepare WA broadcast copy", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "Low", start_date: "26 Mei 2026", deadline: "5 Juni 2026", status: "Not Started", dependency: "Final CTA & timeline", notes: "Output: WA broadcast copy" },
+  { id: "T012", name: "Finalize Key Visual concept", workstream: "Marketing & Design", pic: "Ica / Designer Team", priority: "High", start_date: "15 Mei 2026", deadline: "28 Mei 2026", status: "In Progress", dependency: "Creative brief", notes: "Output: Key visual concept" },
+  { id: "T013", name: "Create Launch Poster assets", workstream: "Marketing & Design", pic: "Ica / Designer Team", priority: "High", start_date: "25 Mei 2026", deadline: "2 Juni 2026", status: "Not Started", dependency: "Key visual concept", notes: "Output: Launch poster assets" },
+  { id: "T014", name: "Finalize sponsor proposal & benefit package", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "High", start_date: "1 Juni 2026", deadline: "24 Juli 2026", status: "Blocked", dependency: "Sponsor benefit revision", blocker: "Sponsor Proposal Belum Dikirim. Menghambat proses outreach sponsor dan partnership.", notes: "Output: Sponsor proposal final" },
+  { id: "T015", name: "Compile initial outreach target list", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "Medium", start_date: "18 Mei 2026", deadline: "26 Mei 2026", status: "Done", dependency: "Sponsor categories", notes: "Output: Outreach target list" },
+  { id: "T016", name: "Finalize BINUS Auditorium requirements", workstream: "Main Event Operational", pic: "Aulia / Partnership", priority: "High", start_date: "1 Juni 2026", deadline: "24 Juni 2026", status: "In Progress", dependency: "BINUS coordination", notes: "Output: Venue requirement document" },
+  { id: "T017", name: "Clean Menu Go 15 May campaign data", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "15 Mei 2026", deadline: "24 Mei 2026", status: "Not Started", dependency: "Menu Go campaign data", notes: "Output: Clean dataset" },
+  { id: "T018", name: "Draft landing page copy", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "High", start_date: "18 Mei 2026", deadline: "25 Mei 2026", status: "Not Started", dependency: "One pager & guidance", notes: "Output: Landing page copy" },
+  { id: "T019", name: "Prepare mentor outline & attendance tracker", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "Medium", start_date: "20 Juni 2026", deadline: "5 Juli 2026", status: "Not Started", dependency: "Mentoring agenda", notes: "Output: Mentor outline & tracker" },
+  { id: "T020", name: "Draft Survey Guideline & Mission Template", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "25 Juni 2026", deadline: "8 Juli 2026", status: "In Progress", dependency: "Survey concept", notes: "Output: Survey guideline & mission template" },
+  { id: "T021", name: "Formulate survey budget allocation", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juli 2026", deadline: "8 Juli 2026", status: "Not Started", dependency: "Budget assumption", notes: "Output: Survey budget guideline" }
 ];
 
 export default function TasksPage() {
@@ -89,7 +71,15 @@ export default function TasksPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Task>>({});
 
-  const workstreams = ["All", "Program Management", "Competition", "Dataset", "Survey Activities", "Platform & Tech", "Marketing", "Design", "Sponsor", "Event Ops", "Mentoring"];
+  const workstreams = [
+    "All",
+    "Program Management",
+    "Academic & Competition",
+    "Data & Spatial Tech",
+    "Marketing & Design",
+    "Sponsorship & Outreach",
+    "Main Event Operational"
+  ];
   const statuses = ["All", "Not Started", "In Progress", "Waiting Review", "Blocked", "Done", "Delayed"];
 
   // Fetch tasks from Supabase on mount
@@ -187,27 +177,28 @@ export default function TasksPage() {
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Workstream Tasks</h1>
-          <p className="mt-1 text-zinc-500 text-sm">Kelola tugas operasional, PIC, tenggat waktu, dan penyelesaian masalah di setiap divisi.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Workstream Tasks</h1>
+          <p className="mt-1 text-zinc-500 text-sm">Kelola tugas operasional, PIC, tenggat waktu, dan blocker di setiap divisi.</p>
         </div>
-        <Button 
+        <Button
           onClick={handleCreateNew}
-          className="bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+          className="bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer self-start"
         >
           <Plus weight="bold" /> Add Task
         </Button>
       </div>
 
-      {/* Filterable Menu Tabs */}
-      <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-4">
+      {/* Filters */}
+      <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm space-y-3">
+        {/* Workstream - horizontal scroll */}
         <div>
-          <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Pilih Workstream</label>
-          <div className="flex flex-wrap gap-1.5">
+          <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Workstream</label>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {workstreams.map(ws => (
               <button
                 key={ws}
                 onClick={() => { setActiveWorkstream(ws); setSelectedTaskDetail(null); setIsEditing(false); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${
                   activeWorkstream === ws
                     ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
                     : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
@@ -219,15 +210,16 @@ export default function TasksPage() {
           </div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Filter Status</span>
-            <div className="flex flex-wrap gap-1">
+        <div className="border-t border-zinc-100 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Status filter - horizontal scroll */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest shrink-0">Status</span>
+            <div className="flex gap-1 overflow-x-auto scrollbar-none pb-0.5">
               {statuses.map(st => (
                 <button
                   key={st}
                   onClick={() => { setStatusFilter(st); setSelectedTaskDetail(null); setIsEditing(false); }}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer whitespace-nowrap shrink-0 ${
                     statusFilter === st
                       ? "bg-zinc-900 text-white border-zinc-900"
                       : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50"
@@ -238,55 +230,55 @@ export default function TasksPage() {
               ))}
             </div>
           </div>
-          
-          <div className="text-xs font-semibold text-zinc-400">
-            Ditemukan <span className="text-zinc-950 font-bold">{filteredTasks.length}</span> Tugas
+
+          <div className="text-xs font-semibold text-zinc-400 shrink-0">
+            <span className="text-zinc-950 font-bold">{filteredTasks.length}</span> tugas ditemukan
           </div>
         </div>
       </div>
 
       {/* Main Grid View */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side: Tasks Table List */}
-        <Card className="lg:col-span-2 bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm overflow-hidden flex flex-col justify-between">
+        {/* Left Side: Tasks Table */}
+        <Card className="lg:col-span-2 bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5">Nama Task</th>
-                  <th className="py-2.5">PIC</th>
-                  <th className="py-2.5 text-center">Priority</th>
-                  <th className="py-2.5 text-center">Deadline</th>
-                  <th className="py-2.5 text-right">Status</th>
+                <tr className="border-b border-zinc-100 text-zinc-400 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="pb-2.5">Nama Task</th>
+                  <th className="pb-2.5">PIC</th>
+                  <th className="pb-2.5 text-center">Priority</th>
+                  <th className="pb-2.5 text-center">Deadline</th>
+                  <th className="pb-2.5 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50">
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-zinc-400 font-medium">
+                    <td colSpan={5} className="py-12 text-center text-zinc-400 font-medium text-sm">
                       <ClipboardText className="mx-auto text-zinc-300 mb-2" size={32} />
                       Tidak ada tugas yang sesuai dengan filter.
                     </td>
                   </tr>
                 ) : (
                   filteredTasks.map((task) => (
-                    <tr 
-                      key={task.id} 
+                    <tr
+                      key={task.id}
                       onClick={() => { setSelectedTaskDetail(task); setIsEditing(false); }}
-                      className={`hover:bg-zinc-50/70 transition-colors cursor-pointer ${
-                        selectedTaskDetail?.id === task.id ? "bg-zinc-50 font-bold" : ""
+                      className={`hover:bg-zinc-50 transition-colors cursor-pointer ${
+                        selectedTaskDetail?.id === task.id ? "bg-zinc-50" : ""
                       }`}
                     >
-                      <td className="py-3.5 pr-4 text-zinc-900 font-semibold max-w-[200px] truncate">{task.name}</td>
-                      <td className="py-3.5 text-zinc-650 font-bold">{task.pic}</td>
-                      <td className="py-3.5 text-center">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
+                      <td className="py-3 pr-4 text-zinc-900 font-semibold max-w-[200px] truncate">{task.name}</td>
+                      <td className="py-3 text-zinc-600 font-medium">{task.pic}</td>
+                      <td className="py-3 text-center">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${getPriorityStyle(task.priority)}`}>
                           {task.priority}
                         </span>
                       </td>
-                      <td className="py-3.5 text-center text-zinc-500 font-mono font-semibold">{task.deadline}</td>
-                      <td className="py-3.5 text-right">
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border tracking-wider ${getStatusStyle(task.status)}`}>
+                      <td className="py-3 text-center text-zinc-500 font-mono text-xs">{task.deadline}</td>
+                      <td className="py-3 text-right">
+                        <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded border tracking-wide ${getStatusStyle(task.status)}`}>
                           {task.status}
                         </span>
                       </td>

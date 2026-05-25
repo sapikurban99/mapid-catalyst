@@ -35,6 +35,7 @@ type Task = {
   workstream: string;
   pic: string;
   priority: "High" | "Medium" | "Low";
+  start_date?: string;
   deadline: string;
   status: "Not Started" | "In Progress" | "Waiting Review" | "Blocked" | "Done" | "Delayed";
   dependency?: string;
@@ -46,31 +47,31 @@ type Task = {
 // High-fidelity fallback events containing the exact 17 timeline phases
 const defaultEvents: TimelineEvent[] = [
   {
-    id: "t0",
-    phase: "Fase Planning & Persiapan Kompetisi",
+    id: "P001",
+    phase: "Planning & Persiapan Kompetisi",
     date_range: "1 – 31 Mei 2026",
     type: "Phase Ingestion",
-    description: "Perumusan konsep, pembuatan timeline, persiapan dataset, penyusunan guideline, dan koordinasi dengan partnership & sponsor.",
+    description: "Perumusan konsep, timeline, dataset, guideline, sponsor proposal, visual assets, dan setup awal webapp.",
     order_index: 0
   },
   {
-    id: "t1",
-    phase: "Pembukaan Pendaftaran & Pengumpulan Proposal",
+    id: "P002",
+    phase: "Pembukaan Pendaftaran WebGIS Competition",
     date_range: "8 – 26 Juni 2026",
     type: "Registration",
-    description: "Peserta mendaftar dan mengumpulkan proposal ide WebGIS berbasis tema Maps That Think!",
+    description: "Pembukaan pendaftaran untuk peserta WebGIS Competition 2026. Peserta mendaftar dan mengirimkan proposal ide berbasis tema dari sponsor.",
     order_index: 1
   },
   {
-    id: "t2",
+    id: "P003",
     phase: "Seleksi Proposal & Kurasi Tim",
-    date_range: "29 Juni – 3 Juli 2026",
+    date_range: "27 Juni – 3 Juli 2026",
     type: "Phase Ingestion",
-    description: "Panitia menyeleksi proposal dan menentukan 50 tim terkurasi.",
+    description: "Proses seleksi proposal dan kurasi peserta, penentuan 50 tim terdaftar yang akan melanjutkan ke tahap pengembangan WebGIS.",
     order_index: 2
   },
   {
-    id: "t3",
+    id: "P004",
     phase: "Pengumuman 50 Tim Terkurasi",
     date_range: "4 Juli 2026",
     type: "Announcement",
@@ -78,116 +79,140 @@ const defaultEvents: TimelineEvent[] = [
     order_index: 3
   },
   {
-    id: "t4",
+    id: "P005",
     phase: "Technical Meeting & Delegasi Fasilitas",
     date_range: "6 Juli 2026",
     type: "Technical Meeting",
-    description: "Penjelasan teknis kompetisi, data, survey activities, fasilitas, timeline, penggunaan GEO MAPID, penggunaan MAPID MAPS, dan ketentuan WebGIS.",
+    description: "Penjelasan teknis kompetisi, data, survey activities, fasilitas, timeline, GEO MAPID, MAPID MAPS, dan ketentuan WebGIS.",
     order_index: 4
   },
   {
-    id: "t5",
-    phase: "Mentoring 1 — PRD & Product Planning",
+    id: "P006",
+    phase: "Mentoring 1 — Industry Demand & Creating Product bervalue sesuai market",
     date_range: "8 Juli 2026",
     type: "Field Mentoring",
-    description: "Peserta mendapatkan arahan mengenai PRD, struktur dokumen, user needs, fitur produk, user flow, kebutuhan data, dan rencana pengembangan WebGIS.",
+    description: "Sesi mentoring awal mengenai analisis permintaan industri, segmentasi market spasial, dan perumusan value proposition produk WebGIS.",
     order_index: 5
   },
   {
-    id: "t6",
-    phase: "Survey Activities & Data Enrichment",
-    date_range: "9 – 27 Juli 2026",
-    type: "Phase Ingestion",
-    description: "Tim melakukan pengayaan, validasi, atau pelengkapan data lapangan dengan dukungan survey activity budget.",
+    id: "P007",
+    phase: "Mentoring 2 — Data Vis",
+    date_range: "15 Juli 2026",
+    type: "Field Mentoring",
+    description: "Sesi mentoring interaktif tentang teknik visualisasi data geospasial, kartografi modern, dan desain UI/UX peta yang intuitif.",
     order_index: 6
   },
   {
-    id: "t7",
-    phase: "Mentoring 2 — GEO MAPID, Database & MAPID MAPS",
-    date_range: "29 Juli 2026",
+    id: "P008",
+    phase: "Mentoring 3 — PRD & Product Planning",
+    date_range: "22 Juli 2026",
     type: "Field Mentoring",
-    description: "Peserta mendapatkan arahan penggunaan GEO MAPID untuk database/pengelolaan data dan penggunaan MAPID MAPS sebagai basemap utama WebGIS.",
+    description: "Arahan mengenai PRD, struktur dokumen, user needs, fitur produk, user flow, kebutuhan data, dan rencana pengembangan WebGIS.",
     order_index: 7
   },
   {
-    id: "t8",
-    phase: "Data Processing & WebGIS Development",
-    date_range: "29 Juli – 4 September 2026",
-    type: "AI Implementation",
-    description: "Tim mengolah data MAPID dan data hasil survey activities menjadi insight, lalu mengembangkan WebGIS.",
+    id: "P009",
+    phase: "Survey Activities & Data Enrichment",
+    date_range: "9 – 27 Juli 2026",
+    type: "Phase Ingestion",
+    description: "Tim melakukan pengayaan, validasi, atau pelengkapan data lapangan dengan survey activity budget.",
     order_index: 8
   },
   {
-    id: "t9",
-    phase: "Mentoring 3 — Product Review WebGIS",
-    date_range: "19 Agustus 2026",
+    id: "P010",
+    phase: "Mentoring 4 — GEO MAPID, Database & MAPID MAPS",
+    date_range: "29 Juli 2026",
     type: "Field Mentoring",
-    description: "Review progres WebGIS peserta, termasuk struktur produk, kualitas visualisasi, interaksi peta, penyajian insight, dan kesesuaian dengan kaidah MAPID.",
+    description: "Arahan penggunaan GEO MAPID sebagai database dan MAPID MAPS sebagai basemap utama WebGIS.",
     order_index: 9
   },
   {
-    id: "t10",
-    phase: "Pengumpulan Final WebGIS & PRD",
-    date_range: "4 September 2026",
-    type: "Submission",
-    description: "Peserta mengumpulkan link WebGIS, dokumen PRD, metadata, dan dokumentasi pengolahan data.",
+    id: "P011",
+    phase: "Development WebGIS",
+    date_range: "4 Juli – 11 September 2026",
+    type: "AI Implementation",
+    description: "Tim yang terkurasi mulai mengembangkan solusi WebGIS berbasis proposal yang telah disetujui, dengan mentoring teknis terbatas.",
     order_index: 10
   },
   {
-    id: "t11",
-    phase: "Seleksi Grand Final",
-    date_range: "7 – 11 September 2026",
-    type: "Phase Ingestion",
-    description: "Juri menilai WebGIS, PRD, dan kelayakan finalis.",
+    id: "P012",
+    phase: "Privat 1on1 Sessions dengan Masing-Masing Tim (Rutin 2 Mingguan)",
+    date_range: "4 Juli – 11 September 2026",
+    type: "Field Mentoring",
+    description: "Sesi asistensi privat dwi-mingguan untuk memantau arsitektur WebGIS, integrasi database, dan penyusunan dokumen PRD masing-masing tim.",
     order_index: 11
   },
   {
-    id: "t12",
-    phase: "Pengumuman Top 10 Finalis",
-    date_range: "12 September 2026",
-    type: "Announcement",
-    description: "Top 10 finalis diumumkan untuk tampil di MAPID Catalyst 2026.",
+    id: "P013",
+    phase: "Mentoring 5 — Product Review WebGIS",
+    date_range: "19 Agustus 2026",
+    type: "Field Mentoring",
+    description: "Review progres WebGIS, struktur produk, kualitas visualisasi, interaksi peta, insight, dan kesesuaian kaidah MAPID.",
     order_index: 12
   },
   {
-    id: "t13",
-    phase: "Mentoring 4 — Public Speaking & Final Presentation",
-    date_range: "14 – 15 September 2026",
-    type: "Field Mentoring",
-    description: "Top 10 finalis mendapatkan mentoring public speaking, storytelling produk, demo WebGIS, dan simulasi presentasi final.",
+    id: "P014",
+    phase: "Pengumpulan Final WebGIS & PRD",
+    date_range: "11 September 2026",
+    type: "Submission",
+    description: "Peserta mengumpulkan link WebGIS, PRD, metadata, dokumentasi survey, dan metode pengolahan data.",
     order_index: 13
   },
   {
-    id: "t14",
-    phase: "Masa Perbaikan Finalis",
-    date_range: "12 – 17 September 2026",
+    id: "P015",
+    phase: "Seleksi Grand Final",
+    date_range: "14 – 18 September 2026",
     type: "Phase Ingestion",
-    description: "Finalis melakukan penyempurnaan produk dan materi presentasi berdasarkan masukan awal panitia/mentor.",
+    description: "Penilaian akhir oleh juri terhadap prototype WebGIS dan PRD yang diajukan oleh peserta, penentuan finalis yang akan tampil di acara utama.",
     order_index: 14
   },
   {
-    id: "t15",
-    phase: "Final Presentation, Jury Evaluation & Showcase",
+    id: "P016",
+    phase: "Pengumuman Top 10 Finalis",
     date_range: "19 September 2026",
     type: "Announcement",
-    description: "Finalis mempresentasikan prototype dan demo WebGIS di hadapan juri dan audiens (TBD).",
+    description: "Top 10 finalis diumumkan untuk tampil di MAPID Catalyst 2026.",
     order_index: 15
   },
   {
-    id: "t16",
-    phase: "Showcase, Panel Discussion & Awarding",
-    date_range: "20 September 2026",
-    type: "Announcement",
-    description: "Showcase publik, diskusi panel, pengumuman pemenang, dan awarding di MAPID Catalyst 2026 (TBD).",
+    id: "P017",
+    phase: "Mentoring 6 — Public Speaking & Final Presentation",
+    date_range: "21 – 22 September 2026",
+    type: "Field Mentoring",
+    description: "Top 10 finalis mendapatkan mentoring public speaking, storytelling produk, demo WebGIS, dan simulasi presentasi final.",
     order_index: 16
   },
   {
-    id: "t17",
-    phase: "Post-Event Publication",
-    date_range: "21 – 30 September 2026",
-    type: "Announcement",
-    description: "Publikasi karya, dokumentasi, dan recap kompetisi.",
+    id: "P018",
+    phase: "Final Preparation & Rehearsal",
+    date_range: "21 – 23 September 2026",
+    type: "Phase Ingestion",
+    description: "Finalisasi venue dan layout, koordinasi teknis untuk final presentation dan showcase solusi WebGIS. Gladi bersih dan briefing final volunteer, serta sponsor.",
     order_index: 17
+  },
+  {
+    id: "P019",
+    phase: "MAPID Catalyst Day 1",
+    date_range: "24 September 2026 (TBD)",
+    type: "Announcement",
+    description: "Penilaian teknis dan substansi solusi WebGIS Competition 2026 oleh dewan juri, sekaligus sesi WebGIS showcase terkurasi di mana finalis mempresentasikan prototype dan demo solusi mereka di hadapan audiens kampus dan komunitas geospasial muda.",
+    order_index: 18
+  },
+  {
+    id: "P020",
+    phase: "MAPID Catalyst Day 2",
+    date_range: "25 September 2026 (TBD)",
+    type: "Announcement",
+    description: "WebGIS showcase skala penuh yang menampilkan solusi para pemenang dan finalis kepada komunitas geospasial yang lebih luas, diikuti diskusi panel tentang transformasi lahan berkelanjutan, inovasi spasial, dan peran teknologi geospasial dalam pembangunan.",
+    order_index: 19
+  },
+  {
+    id: "P021",
+    phase: "Post-Event Publication",
+    date_range: "28 September – 5 Oktober 2026",
+    type: "Announcement",
+    description: "Publikasi karya, dokumentasi, recap kompetisi, sponsor report, dan post-event report.",
+    order_index: 20
   }
 ];
 
@@ -260,44 +285,69 @@ const parseDateRangeStr = (rangeStr: string): { start: Date; end: Date } | null 
   return null;
 };
 
+const parseTaskDeadlineStr = (dateStr: string): Date | null => {
+  const str = dateStr.toLowerCase().trim();
+  const months = [
+    "januari", "februari", "maret", "april", "mei", "juni",
+    "juli", "agustus", "september", "oktober", "november", "desember"
+  ];
+  const indonesianShortMonths = [
+    "jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "sep", "okt", "nov", "des"
+  ];
+  
+  const parts = str.split(/\s+/);
+  if (parts.length < 3) return null;
+  
+  const day = parseInt(parts[0], 10);
+  let month = -1;
+  const monthName = parts[1];
+  
+  months.forEach((m, idx) => {
+    if (monthName.includes(m)) month = idx;
+  });
+  if (month === -1) {
+    indonesianShortMonths.forEach((m, idx) => {
+      if (monthName.includes(m)) month = idx;
+    });
+  }
+  
+  const year = parseInt(parts[2], 10);
+  if (isNaN(day) || month === -1 || isNaN(year)) return null;
+  
+  return new Date(year, month, day);
+};
+
+const getPhaseRelatedTasks = (phaseId: string, allTasks: Task[]): Task[] => {
+  const mapping: Record<string, string[]> = {
+    "P001": ["T001", "T002", "T003", "T004", "T005", "T006", "T007", "T008", "T009", "T010", "T012", "T013", "T014", "T015", "T016", "T017", "T018"],
+    "P002": ["T004", "T005", "T006", "T011", "T012", "T013", "T018"],
+    "P003": ["T004", "T005", "T006"],
+    "P004": ["T011", "T018"],
+    "P005": ["T005", "T006", "T008", "T009", "T010", "T019"],
+    "P006": ["T005", "T019"],
+    "P007": ["T007", "T008", "T020", "T017"],
+    "P008": ["T009", "T010", "T019"],
+    "P009": ["T007", "T008", "T009", "T010", "T017"],
+    "P010": ["T019"],
+    "P011": ["T005", "T006", "T008"],
+    "P012": ["T005", "T006", "T008", "T019"],
+    "P013": ["T019"],
+    "P014": ["T011", "T018"],
+    "P015": ["T019"],
+    "P016": ["T019"],
+    "P017": ["T016", "T014", "T015"],
+    "P018": ["T016", "T014", "T015"],
+    "P019": ["T011", "T018"],
+    "P020": ["T011", "T018"],
+    "P021": ["T011", "T018"]
+  };
+  
+  const targetIds = mapping[phaseId] || [];
+  return allTasks.filter(t => targetIds.includes(t.id));
+};
+
 const getAssociatedWorkstreams = (type: string, name: string): string[] => {
-  const t = type.toLowerCase();
-  const n = name.toLowerCase();
-  const list: string[] = [];
-  
-  if (n.includes("planning") || n.includes("persiapan") || t.includes("milestone")) {
-    list.push("Program Management", "Sponsor", "Marketing", "Design", "Dataset", "Platform & Tech", "Competition");
-  }
-  if (t.includes("registration") || n.includes("pendaftaran") || n.includes("proposal")) {
-    list.push("Competition", "Marketing", "Design");
-  }
-  if (t.includes("selection") || t.includes("announcement") || n.includes("seleksi") || n.includes("pengumuman") || n.includes("finalis")) {
-    list.push("Competition", "Marketing");
-  }
-  if (t.includes("technical") || n.includes("technical meeting")) {
-    list.push("Competition", "Event Ops");
-  }
-  if (t.includes("mentoring") || n.includes("mentoring")) {
-    list.push("Mentoring");
-  }
-  if (n.includes("survey") || t.includes("survey")) {
-    list.push("Survey Activities");
-  }
-  if (t.includes("ai") || t.includes("platform") || n.includes("webgis") || n.includes("processing") || n.includes("data") || n.includes("perbaikan")) {
-    list.push("Platform & Tech", "Dataset", "Competition");
-  }
-  if (t.includes("submission") || n.includes("pengumpulan") || n.includes("final")) {
-    list.push("Competition");
-  }
-  if (t.includes("event") || n.includes("showcase") || n.includes("awarding") || n.includes("gladi")) {
-    list.push("Event Ops", "Sponsor", "Marketing");
-  }
-  if (t.includes("sponsor") || n.includes("sponsor")) {
-    list.push("Sponsor");
-  }
-  
-  const uniqueList = Array.from(new Set(list));
-  return uniqueList.length > 0 ? uniqueList : ["Program Management"];
+  return [];
 };
 
 // ─── Gantt Chart Component ───────────────────────────────────────────────
@@ -443,8 +493,7 @@ function GanttChart({
               const widthPct = daysBetween(range.start, range.end) / timeline.totalDays * 100;
               const isExpanded = expandedEvent === event.id;
 
-              const ws = getAssociatedWorkstreams(event.type, event.phase);
-              const assocTasks = tasks.filter(t => ws.includes(t.workstream));
+              const assocTasks = getPhaseRelatedTasks(event.id, tasks);
               const doneCount = assocTasks.filter(t => t.status === "Done").length;
               const progress = assocTasks.length > 0 ? Math.round(doneCount / assocTasks.length * 100) : 0;
 
@@ -536,7 +585,7 @@ function GanttChart({
 
                       {/* Associated tasks mini-list */}
                       {assocTasks.length > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Workstream Tasks</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                             {assocTasks.map(task => (
@@ -564,6 +613,184 @@ function GanttChart({
                           </div>
                         </div>
                       )}
+
+                      {/* Task-Level Gantt Chart — shows date range bars per task */}
+                      {assocTasks.length > 0 && range && (() => {
+                        // Build a timeline scope for this phase
+                        const phaseStart = range.start;
+                        const phaseEnd = range.end;
+                        const phaseDays = Math.max(daysBetween(phaseStart, phaseEnd), 1);
+
+                        // Generate week columns for the mini Gantt header
+                        const miniMonthCols: { label: string; left: number; width: number }[] = [];
+                        {
+                          let cursor = new Date(phaseStart.getFullYear(), phaseStart.getMonth(), 1);
+                          while (cursor <= phaseEnd) {
+                            const mStart = new Date(cursor);
+                            const mEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                            const clampS = mStart < phaseStart ? phaseStart : mStart;
+                            const clampE = mEnd > phaseEnd ? phaseEnd : mEnd;
+                            const left = daysBetween(phaseStart, clampS) / phaseDays * 100;
+                            const width = daysBetween(clampS, clampE) / phaseDays * 100;
+                            if (width > 0) {
+                              miniMonthCols.push({
+                                label: MONTHS_SHORT[cursor.getMonth()],
+                                left,
+                                width
+                              });
+                            }
+                            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                          }
+                        }
+
+                        // Today position within phase
+                        const now = new Date();
+                        let miniTodayPos: number | null = null;
+                        if (now >= phaseStart && now <= phaseEnd) {
+                          miniTodayPos = daysBetween(phaseStart, now) / phaseDays * 100;
+                        }
+
+                        return (
+                          <div className="mt-3 p-3 bg-white border border-zinc-100 rounded-xl space-y-0 overflow-hidden">
+                            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-2">📊 Task Timeline — Dari Kapan Sampai Kapan</p>
+                            <div className="overflow-x-auto">
+                              <div className="min-w-[400px]">
+                                {/* Mini month header */}
+                                <div className="relative h-6 mb-1 ml-[140px]">
+                                  {miniMonthCols.map((col, i) => (
+                                    <div
+                                      key={i}
+                                      className="absolute top-0 h-full flex items-end pb-0.5 border-l border-zinc-100"
+                                      style={{ left: `${col.left}%`, width: `${col.width}%` }}
+                                    >
+                                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider pl-0.5">
+                                        {col.label}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {miniTodayPos !== null && (
+                                    <div className="absolute top-0 bottom-0 w-[2px] bg-rose-400 z-10" style={{ left: `${miniTodayPos}%` }}>
+                                      <div className="w-1.5 h-1.5 rounded-full bg-rose-400 -ml-[2px]" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Task rows */}
+                                <div className="space-y-1">
+                                  {assocTasks.map(task => {
+                                    const taskDeadline = parseTaskDeadlineStr(task.deadline);
+
+                                    // Use real start_date if available, otherwise estimate
+                                    const parsedStartDate = task.start_date ? parseTaskDeadlineStr(task.start_date) : null;
+                                    let taskStart = parsedStartDate || new Date(phaseStart);
+                                    let taskEnd = taskDeadline || new Date(phaseEnd);
+
+                                    // Clamp to phase boundaries for display
+                                    if (taskStart < phaseStart) taskStart = new Date(phaseStart);
+                                    if (taskEnd > phaseEnd) taskEnd = new Date(phaseEnd);
+                                    if (taskStart > phaseEnd) taskStart = new Date(phaseEnd.getTime() - 86400000);
+                                    if (taskEnd < phaseStart) taskEnd = new Date(phaseStart.getTime() + 86400000);
+
+                                    const barLeft = Math.max(daysBetween(phaseStart, taskStart) / phaseDays * 100, 0);
+                                    const barWidth = Math.max(daysBetween(taskStart, taskEnd) / phaseDays * 100, 3);
+
+                                    // Color by status
+                                    const tc =
+                                      task.status === "Done" ? "bg-emerald-500" :
+                                      task.status === "In Progress" ? "bg-blue-500" :
+                                      task.status === "Blocked" ? "bg-rose-500" :
+                                      task.status === "Waiting Review" ? "bg-amber-500" :
+                                      task.status === "Delayed" ? "bg-red-400" :
+                                      "bg-zinc-400";
+
+                                    const tcLight =
+                                      task.status === "Done" ? "bg-emerald-500/10" :
+                                      task.status === "In Progress" ? "bg-blue-500/10" :
+                                      task.status === "Blocked" ? "bg-rose-500/10" :
+                                      task.status === "Waiting Review" ? "bg-amber-500/10" :
+                                      task.status === "Delayed" ? "bg-red-400/10" :
+                                      "bg-zinc-400/10";
+
+                                    // Format dates
+                                    const fmtStart = taskStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                                    const fmtEnd = taskEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+                                    return (
+                                      <div key={task.id} className="flex items-center gap-0">
+                                        {/* Task label */}
+                                        <div className="w-[140px] shrink-0 pr-2 py-1">
+                                          <p className="text-[9px] font-bold text-zinc-700 truncate" title={task.name}>
+                                            <span className="text-zinc-400 mr-1">{task.id}</span>
+                                            {task.name}
+                                          </p>
+                                          <p className="text-[7px] text-zinc-400 font-medium">{task.pic}</p>
+                                        </div>
+
+                                        {/* Bar area */}
+                                        <div className="flex-1 relative h-7">
+                                          {/* Month grid lines */}
+                                          {miniMonthCols.map((col, i) => (
+                                            <div
+                                              key={i}
+                                              className="absolute inset-y-0 border-l border-zinc-100/40"
+                                              style={{ left: `${col.left}%` }}
+                                            />
+                                          ))}
+
+                                          {/* Today line */}
+                                          {miniTodayPos !== null && (
+                                            <div className="absolute top-0 bottom-0 w-[1.5px] bg-rose-400/50 z-10" style={{ left: `${miniTodayPos}%` }} />
+                                          )}
+
+                                          {/* Task bar - solid rounded bar like the main Gantt */}
+                                          <div
+                                            className={`absolute top-1/2 -translate-y-1/2 h-4 rounded-md ${tc} shadow-sm transition-all duration-300 hover:h-5 hover:shadow-md cursor-default flex items-center justify-center group/bar`}
+                                            style={{ left: `${barLeft}%`, width: `${Math.min(barWidth, 100 - barLeft)}%`, minWidth: '20px' }}
+                                            title={`${task.name}\n${fmtStart} → ${fmtEnd}\nStatus: ${task.status}`}
+                                          >
+                                            {/* Label inside bar (only when wide enough) */}
+                                            {barWidth > 15 && (
+                                              <span className="text-[7px] font-bold text-white truncate px-1.5 opacity-90 group-hover/bar:opacity-100">
+                                                {fmtStart} → {fmtEnd}
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Deadline marker diamond */}
+                                          {taskDeadline && (() => {
+                                            const dlPos = daysBetween(phaseStart, taskDeadline) / phaseDays * 100;
+                                            if (dlPos >= 0 && dlPos <= 100) {
+                                              return (
+                                                <div
+                                                  className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rotate-45 bg-zinc-800 z-10 border border-white"
+                                                  style={{ left: `${Math.min(dlPos, 99)}%` }}
+                                                  title={`Deadline: ${task.deadline}`}
+                                                />
+                                              );
+                                            }
+                                            return null;
+                                          })()}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Mini legend */}
+                                <div className="mt-2 pt-2 border-t border-zinc-100 flex flex-wrap gap-3 text-[8px] font-semibold text-zinc-400">
+                                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500" /> Done</span>
+                                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-500" /> In Progress</span>
+                                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-500" /> Waiting Review</span>
+                                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500" /> Blocked</span>
+                                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-zinc-400" /> Not Started</span>
+                                  <span className="flex items-center gap-1 ml-auto"><span className="w-1.5 h-1.5 rotate-45 bg-zinc-800" /> Deadline</span>
+                                  <span className="flex items-center gap-1"><span className="w-0.5 h-3 bg-rose-400" /> Today</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -607,6 +834,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   const [showAddModal, setShowAddModal] = useState(false);
   const [editForm, setEditForm] = useState<Partial<TimelineEvent>>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleEditClick = (event: TimelineEvent) => {
     setEditForm(event);
@@ -631,6 +859,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
     e.preventDefault();
     if (!editForm.id || !editForm.phase) return;
 
+    setIsLoading(true);
     const eventToSave = editForm as TimelineEvent;
     
     if (isEditing) {
@@ -652,10 +881,13 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       });
     } catch (err) {
       console.error("Error saving timeline event:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    setIsLoading(true);
     setEvents(events.filter(ev => ev.id !== id));
     setShowAddModal(false);
     
@@ -663,10 +895,13 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       await supabase.from("catalyst_timeline").delete().eq("id", id);
     } catch (err) {
       console.error("Error deleting timeline event:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleTaskStatusChange = async (taskId: string, newStatus: Task["status"]) => {
+    setIsLoading(true);
     // Optimistic update
     setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
     
@@ -674,6 +909,8 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       await supabase.from("catalyst_tasks").update({ status: newStatus }).eq("id", taskId);
     } catch (err) {
       console.error("Error updating task status:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -935,8 +1172,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
               const isActivePhase = event.id === activeEventId;
 
               // Calculate associated tasks dynamically
-              const ws = getAssociatedWorkstreams(event.type || "General", event.phase);
-              const assocTasks = tasks.filter(task => ws.includes(task.workstream));
+              const assocTasks = getPhaseRelatedTasks(event.id, tasks);
               
               // Progress calculation
               const totalTasks = assocTasks.length;
@@ -1014,39 +1250,87 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                       </div>
                     )}
 
-                    {/* Associated Tasks */}
+                    {/* Associated Tasks (Visual Task Gantt Chart) */}
                     {assocTasks.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-zinc-200/80 space-y-2">
-                        <h4 className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
-                          <ClipboardText size={14} className="text-indigo-650 animate-pulse" /> Associated Workstream Tasks ({assocTasks.length})
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {assocTasks.map(task => (
-                            <div key={task.id} className="p-2.5 bg-white/60 border border-zinc-200 rounded-xl flex items-center justify-between text-[11px] hover:bg-white hover:shadow-xs transition duration-200">
-                              <div className="truncate pr-2">
-                                <p className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</p>
-                                <p className="text-[10px] text-zinc-400 font-semibold">{task.pic} • {task.deadline}</p>
+                      <div className="mt-5 pt-4 border-t border-zinc-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-zinc-950 flex items-center gap-1.5">
+                            <ClipboardText size={16} className="text-indigo-600 shrink-0" />
+                            Gantt Chart Tugas Fase - Timeline & Deadline
+                          </h4>
+                          <span className="text-[10px] text-zinc-400 font-extrabold bg-zinc-150/40 border border-zinc-200 px-2 py-0.5 rounded-lg">
+                            {completedTasks}/{totalTasks} Selesai
+                          </span>
+                        </div>
+
+                        <div className="space-y-3.5 bg-zinc-50/50 p-4 border border-zinc-200 rounded-2xl">
+                          {assocTasks.map(task => {
+                            const phaseRange = parseDateRangeStr(event.date_range);
+                            const taskDate = parseTaskDeadlineStr(task.deadline);
+                            
+                            let pct = 50; 
+                            if (phaseRange && taskDate) {
+                              const totalRange = phaseRange.end.getTime() - phaseRange.start.getTime();
+                              const relativeTime = taskDate.getTime() - phaseRange.start.getTime();
+                              if (totalRange > 0) {
+                                pct = Math.min(100, Math.max(5, (relativeTime / totalRange) * 100));
+                              }
+                            }
+                            
+                            let barColor = "bg-blue-500";
+                            if (task.status === "Done") barColor = "bg-emerald-500";
+                            else if (task.status === "Blocked") barColor = "bg-rose-500 animate-pulse";
+                            else if (task.status === "Delayed") barColor = "bg-amber-500 animate-pulse";
+                            else if (task.status === "Waiting Review") barColor = "bg-purple-500";
+
+                            return (
+                              <div key={task.id} className="space-y-2">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between text-xs gap-2">
+                                  <div className="min-w-0 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-450" />
+                                    <span className="font-bold text-zinc-900 truncate" title={task.name}>{task.name}</span>
+                                    <span className="text-[9px] font-extrabold text-zinc-400 uppercase font-mono">[{task.pic}]</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 font-semibold self-start md:self-center shrink-0">
+                                    <span className="text-[10px] text-zinc-400 bg-white border border-zinc-150 px-2 py-0.5 rounded-lg font-mono">
+                                      📅 Deadline: {task.deadline}
+                                    </span>
+                                    <select 
+                                      value={task.status}
+                                      onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
+                                      className={`px-2 py-0.5 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
+                                        task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                        task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                        task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
+                                        'bg-zinc-100 text-zinc-650 border-zinc-200'
+                                      }`}
+                                      style={{ textAlignLast: "center" }}
+                                    >
+                                      <option value="Not Started">Not Started</option>
+                                      <option value="In Progress">In Progress</option>
+                                      <option value="Waiting Review">Waiting Review</option>
+                                      <option value="Blocked">Blocked</option>
+                                      <option value="Done">Done</option>
+                                      <option value="Delayed">Delayed</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Visual Timeline Slider bar */}
+                                <div className="relative h-6 bg-white border border-zinc-200 rounded-lg overflow-hidden flex items-center px-1">
+                                  <div className="absolute inset-y-0 left-0 w-0.5 bg-zinc-200" />
+                                  <div 
+                                    className={`h-4 rounded-md ${barColor} transition-all duration-500 shadow-sm relative flex items-center min-w-[20px]`}
+                                    style={{ width: `${pct}%` }}
+                                  >
+                                    <span className="absolute right-1 text-[8px] font-black text-white px-1">
+                                      {Math.round(pct)}%
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <select 
-                                value={task.status}
-                                onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
-                                className={`px-1 py-1 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
-                                  task.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                  task.status === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                  task.status === 'In Progress' ? 'bg-blue-50 text-blue-750 border-blue-100' :
-                                  'bg-zinc-100 text-zinc-650 border-zinc-200'
-                                }`}
-                                style={{ textAlignLast: "center" }}
-                              >
-                                <option value="Not Started" className="bg-white text-zinc-800">Not Started</option>
-                                <option value="In Progress" className="bg-white text-blue-700">In Progress</option>
-                                <option value="Waiting Review" className="bg-white text-amber-600">Waiting Review</option>
-                                <option value="Blocked" className="bg-white text-rose-700">Blocked</option>
-                                <option value="Done" className="bg-white text-emerald-700">Done</option>
-                                <option value="Delayed" className="bg-white text-zinc-600">Delayed</option>
-                              </select>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1267,8 +1551,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
 
                           {/* Associated Tasks */}
                           {(() => {
-                            const ws = getAssociatedWorkstreams(event.type || "General", event.phase);
-                            const assocTasks = tasks.filter(task => ws.includes(task.workstream));
+                            const assocTasks = getPhaseRelatedTasks(event.id, tasks);
                             if (assocTasks.length === 0) return null;
                             
                             return (
@@ -1434,6 +1717,22 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
               </div>
             </form>
           </Card>
+        </div>
+      )}
+
+      {/* Premium Loading Spinner Modal Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-[9999] flex items-center justify-center animate-[fadeIn_0.15s_ease-out]">
+          <div className="bg-white/90 border border-zinc-100/80 shadow-2xl rounded-3xl p-6 flex flex-col items-center gap-4 max-w-[200px] text-center">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-zinc-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-t-zinc-900 border-r-zinc-900 animate-spin" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-800">Menyimpan Data...</p>
+              <p className="text-[9px] text-zinc-400 font-medium mt-0.5">Sinkronisasi Supabase</p>
+            </div>
+          </div>
         </div>
       )}
     </div>
