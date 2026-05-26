@@ -13,10 +13,13 @@ import {
   TrendUp,
   User,
   Clock,
-  Briefcase
+  Briefcase,
+  PencilSimple,
+  X
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -34,85 +37,20 @@ type Task = {
   notes?: string;
 };
 
-const initialTasks: Task[] = [
-  { id: "T001", name: "Finalize master timeline final", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", start_date: "1 Mei 2026", deadline: "20 Mei 2026", status: "In Progress", dependency: "Draft timeline", notes: "Output: Approved timeline P001–P021" },
-  { id: "T002", name: "Set up weekly sync schedule", workstream: "Program Management", pic: "Hadi / Lead", priority: "Medium", start_date: "18 Mei 2026", deadline: "22 Mei 2026", status: "Done", dependency: "Internal calendar", notes: "Output: Weekly sync calendar" },
-  { id: "T003", name: "Establish risk register", workstream: "Program Management", pic: "Hadi / Lead", priority: "High", start_date: "15 Mei 2026", deadline: "25 Mei 2026", status: "In Progress", dependency: "Project scope", notes: "Output: Risk register" },
-  { id: "T004", name: "Set up project dashboard structure", workstream: "Program Management", pic: "PM / Lead", priority: "High", start_date: "18 Mei 2026", deadline: "31 Mei 2026", status: "In Progress", dependency: "Timeline & task structure", notes: "Output: Webapp dashboard structure" },
-  { id: "T005", name: "Create decision log and meeting notes tracker", workstream: "Program Management", pic: "PM / Lead", priority: "Medium", start_date: "20 Mei 2026", deadline: "31 Mei 2026", status: "Not Started", dependency: "Weekly sync", notes: "Output: Decision log template" },
-  { id: "T006", name: "Finalize FAQ peserta", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "12 Mei 2026", deadline: "25 Mei 2026", status: "In Progress", dependency: "Guidance draft", notes: "Output: Final FAQ" },
-  { id: "T007", name: "Finalize general guidance document", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "15 Mei 2026", deadline: "28 Mei 2026", status: "Waiting Review", dependency: "Latest guidance draft", notes: "Output: Published guidance" },
-  { id: "T008", name: "Finalize proposal ide template", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "19 Mei 2026", deadline: "30 Mei 2026", status: "Not Started", dependency: "Existing proposal template", notes: "Output: Final proposal template" },
-  { id: "T009", name: "Finalize PRD template", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "19 Mei 2026", deadline: "30 Mei 2026", status: "Not Started", dependency: "Existing PRD template", notes: "Output: Final PRD template" },
-  { id: "T010", name: "Create judging rubric for proposal selection", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "25 Mei 2026", deadline: "7 Juni 2026", status: "Not Started", dependency: "Guidance final", notes: "Output: Proposal scoring rubric" },
-  { id: "T011", name: "Create Top 50 curation workflow", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "1 Juni 2026", deadline: "20 Juni 2026", status: "Not Started", dependency: "Proposal scoring rubric", notes: "Output: Curation workflow" },
-  { id: "T012", name: "Create announcement template for Top 50", workstream: "Academic & Competition / Marketing", pic: "Fariz + Dwi", priority: "Medium", start_date: "20 Juni 2026", deadline: "30 Juni 2026", status: "Not Started", dependency: "Top 50 workflow", notes: "Output: Announcement template" },
-  { id: "T013", name: "Prepare technical meeting deck", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "15 Juni 2026", deadline: "3/7/2026", status: "Not Started", dependency: "Guidance, data docs, platform guide", notes: "Output: Technical meeting deck" },
-  { id: "T014", name: "Prepare technical meeting attendance & Q&A tracker", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "Medium", start_date: "20 Juni 2026", deadline: "5 Juli 2026", status: "Not Started", dependency: "Technical meeting deck", notes: "Output: Attendance & Q&A tracker" },
-  { id: "T015", name: "Prepare mentoring outline — Industry Demand & Product Value", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "20 Juni 2026", deadline: "5 Juli 2026", status: "Not Started", dependency: "Mentoring framework", notes: "Output: Mentoring 1 outline" },
-  { id: "T016", name: "Prepare mentoring outline — Data Visualization", workstream: "Academic & Competition / Data Team", pic: "Fariz + Data Team", priority: "High", start_date: "25 Juni 2026", deadline: "10 Juli 2026", status: "Not Started", dependency: "Dataset & WebGIS requirement", notes: "Output: Mentoring 2 outline" },
-  { id: "T017", name: "Prepare mentoring outline — PRD & Product Planning", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "25 Juni 2026", deadline: "17 Juli 2026", status: "Not Started", dependency: "PRD template", notes: "Output: Mentoring 3 outline" },
-  { id: "T018", name: "Prepare mentoring outline — GEO MAPID, Database & MAPID MAPS", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "1 Juli 2026", deadline: "24 Juli 2026", status: "Not Started", dependency: "GEO MAPID & MAPID MAPS guide", notes: "Output: Mentoring 4 outline" },
-  { id: "T019", name: "Prepare mentoring outline — Product Review WebGIS", workstream: "Academic & Competition / Data Team", pic: "Fariz + Data Team", priority: "Medium", start_date: "1 Agustus 2026", deadline: "14 Agustus 2026", status: "Not Started", dependency: "Development progress", notes: "Output: Mentoring 5 review checklist" },
-  { id: "T020", name: "Prepare mentoring outline — Public Speaking & Final Presentation", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "1 September 2026", deadline: "16 September 2026", status: "Not Started", dependency: "Top 10 finalist list", notes: "Output: Mentoring 6 outline" },
-  { id: "T021", name: "Create 1-on-1 mentoring tracker", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "20 Juni 2026", deadline: "5 Juli 2026", status: "Not Started", dependency: "Top 50 list", notes: "Output: 1-on-1 tracker" },
-  { id: "T022", name: "Schedule biweekly 1-on-1 sessions with each team", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "4 Juli 2026", deadline: "11 Juli 2026", status: "Not Started", dependency: "Top 50 list", notes: "Output: 1-on-1 schedule" },
-  { id: "T023", name: "Track 1-on-1 session notes and follow-ups", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "Medium", start_date: "4 Juli 2026", deadline: "11 September 2026", status: "Not Started", dependency: "1-on-1 schedule", notes: "Output: Team progress log" },
-  { id: "T024", name: "Prepare Property Go sample dataset", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "In Progress", dependency: "Raw Property Go data", notes: "Output: Property Go sample dataset" },
-  { id: "T025", name: "Clean Menu Go campaign data", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "15 Mei 2026", deadline: "24 Mei 2026", status: "Not Started", dependency: "Menu Go campaign data", notes: "Output: Clean Menu Go dataset" },
-  { id: "T026", name: "Prepare UMKM Go sample dataset", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "UMKM Go campaign data", notes: "Output: UMKM Go sample dataset" },
-  { id: "T027", name: "Prepare Activity Data sample dataset", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "Medium", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "Activity data schema", notes: "Output: Activity sample dataset" },
-  { id: "T028", name: "Write Data Dictionary", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "8 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "Dataset schema", notes: "Output: Data dictionary" },
-  { id: "T029", name: "Write API & Data Access Rules", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "8 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "API access decision", notes: "Output: API & data access guide" },
-  { id: "T030", name: "Setup GEO MAPID campaign template", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "1 Juni 2026", deadline: "3 Juli 2026", status: "In Progress", dependency: "GEO MAPID setup", notes: "Output: GEO MAPID campaign template" },
-  { id: "T031", name: "Write GEO MAPID database guide", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "15 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "GEO MAPID setup", notes: "Output: Database usage guide" },
-  { id: "T032", name: "Write MAPID MAPS basemap guide", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "15 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "MAPID MAPS access", notes: "Output: Basemap guide" },
-  { id: "T033", name: "Draft Survey Guideline & Mission Template", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "25 Juni 2026", deadline: "8 Juli 2026", status: "In Progress", dependency: "Survey concept", notes: "Output: Survey guideline & mission template" },
-  { id: "T034", name: "Formulate survey budget allocation", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juli 2026", deadline: "8 Juli 2026", status: "Not Started", dependency: "Budget assumption", notes: "Output: Survey budget guideline" },
-  { id: "T035", name: "Create survey output validation checklist", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "1 Juli 2026", deadline: "12 Juli 2026", status: "Not Started", dependency: "Survey guideline", notes: "Output: Survey validation checklist" },
-  { id: "T036", name: "Monitor survey activities progress", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "9 Juli 2026", deadline: "27 Juli 2026", status: "Not Started", dependency: "Top 50 list & survey plan", notes: "Output: Survey progress tracker" },
-  { id: "T037", name: "Review survey outputs per team", workstream: "Data & Spatial Tech", pic: "Data Team", priority: "High", start_date: "20 Juli 2026", deadline: "31 Juli 2026", status: "Not Started", dependency: "Survey output", notes: "Output: Survey review notes" },
-  { id: "T038", name: "Prepare WebGIS technical requirement document", workstream: "Data & Spatial Tech", pic: "Tech Team", priority: "High", start_date: "10 Juni 2026", deadline: "3 Juli 2026", status: "Not Started", dependency: "Guidance & platform rules", notes: "Output: WebGIS technical requirement" },
-  { id: "T039", name: "Create final submission checklist", workstream: "Academic & Competition / Data Team", pic: "Fariz + Data Team", priority: "High", start_date: "15 Agustus 2026", deadline: "1 September 2026", status: "Not Started", dependency: "PRD & WebGIS requirement", notes: "Output: Submission checklist" },
-  { id: "T040", name: "Setup final submission form", workstream: "Academic & Competition / Tech Team", pic: "Fariz + Tech Team", priority: "High", start_date: "20 Agustus 2026", deadline: "5 September 2026", status: "Not Started", dependency: "Submission checklist", notes: "Output: Final submission form" },
-  { id: "T041", name: "Create Grand Final scoring rubric", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "25 Agustus 2026", deadline: "7 September 2026", status: "Not Started", dependency: "Judging criteria", notes: "Output: Final scoring rubric" },
-  { id: "T042", name: "Confirm judges for grand final selection", workstream: "Academic & Competition / Partnership", pic: "Fariz + Aulia", priority: "High", start_date: "1 September 2026", deadline: "10 September 2026", status: "Not Started", dependency: "Judge list", notes: "Output: Confirmed judges" },
-  { id: "T043", name: "Conduct Grand Final judging process", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "14 September 2026", deadline: "18 September 2026", status: "Not Started", dependency: "Submission list & rubric", notes: "Output: Top 10 shortlist" },
-  { id: "T044", name: "Prepare Top 10 announcement copy & visual", workstream: "Marketing & Design", pic: "Dwi + Ica", priority: "High", start_date: "12 September 2026", deadline: "18 September 2026", status: "Not Started", dependency: "Top 10 shortlist", notes: "Output: Top 10 announcement assets" },
-  { id: "T045", name: "Announce Top 10 finalists", workstream: "Academic & Competition / Marketing", pic: "Fariz + Dwi", priority: "High", start_date: "19 September 2026", deadline: "19 September 2026", status: "Not Started", dependency: "Announcement assets", notes: "Output: Published Top 10 announcement" },
-  { id: "T046", name: "Prepare final presentation template", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "Medium", start_date: "1 September 2026", deadline: "16 September 2026", status: "Not Started", dependency: "Public speaking outline", notes: "Output: Final presentation template" },
-  { id: "T047", name: "Conduct public speaking mentoring", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "21 September 2026", deadline: "22 September 2026", status: "Not Started", dependency: "Top 10 list", notes: "Output: Public speaking session completed" },
-  { id: "T048", name: "Finalist deck review and feedback", workstream: "Academic & Competition", pic: "Fariz / Academy", priority: "High", start_date: "21 September 2026", deadline: "23 September 2026", status: "Not Started", dependency: "Finalist decks", notes: "Output: Deck feedback notes" },
-  { id: "T049", name: "Finalize sponsor proposal & benefit package", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "High", start_date: "1 Juni 2026", deadline: "24 Juli 2026", status: "Blocked", dependency: "Sponsor benefit revision", blocker: "Sponsor Proposal Belum Dikirim. Menghambat proses outreach sponsor dan partnership.", notes: "Output: Sponsor proposal final" },
-  { id: "T050", name: "Compile initial outreach target list", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "Medium", start_date: "18 Mei 2026", deadline: "26 Mei 2026", status: "Done", dependency: "Sponsor categories", notes: "Output: Outreach target list" },
-  { id: "T051", name: "Send sponsor proposal to target partners", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "High", start_date: "3 Juni 2026", deadline: "31 Juli 2026", status: "Not Started", dependency: "Sponsor proposal final", notes: "Output: Sponsor outreach sent" },
-  { id: "T052", name: "Track sponsor follow-up and negotiation", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "High", start_date: "10 Juni 2026", deadline: "31 Agustus 2026", status: "Not Started", dependency: "Sponsor outreach sent", notes: "Output: Sponsor tracker updated" },
-  { id: "T053", name: "Confirm sponsor benefit deliverables", workstream: "Sponsorship & Outreach", pic: "Aulia / Partnership", priority: "High", start_date: "1 September 2026", deadline: "15 September 2026", status: "Not Started", dependency: "Confirmed sponsors", notes: "Output: Sponsor benefit checklist" },
-  { id: "T054", name: "Finalize BINUS Auditorium requirements", workstream: "Main Event Operational", pic: "Aulia / Partnership", priority: "High", start_date: "1 Juni 2026", deadline: "24 Juni 2026", status: "In Progress", dependency: "BINUS coordination", notes: "Output: Venue requirement document" },
-  { id: "T055", name: "Confirm venue layout and booth area", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "1 Agustus 2026", deadline: "5 September 2026", status: "Not Started", dependency: "Venue requirement", notes: "Output: Venue layout" },
-  { id: "T056", name: "Confirm AV, internet, and technical equipment", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "1 Agustus 2026", deadline: "10 September 2026", status: "Not Started", dependency: "Venue layout", notes: "Output: AV & internet checklist" },
-  { id: "T057", name: "Recruit and brief event volunteers", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "15 Agustus 2026", deadline: "15 September 2026", status: "Not Started", dependency: "Volunteer needs", notes: "Output: Volunteer roster" },
-  { id: "T058", name: "Create final rundown Day 1 and Day 2", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "1 September 2026", deadline: "15 September 2026", status: "Not Started", dependency: "Venue & program flow", notes: "Output: Final rundown" },
-  { id: "T059", name: "Conduct final rehearsal", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "21 September 2026", deadline: "23 September 2026", status: "Not Started", dependency: "Final rundown", notes: "Output: Rehearsal completed" },
-  { id: "T060", name: "Execute MAPID Catalyst Day 1", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "24 September 2026", deadline: "24 September 2026", status: "Not Started", dependency: "Rehearsal completed", notes: "Output: Day 1 executed" },
-  { id: "T061", name: "Execute MAPID Catalyst Day 2", workstream: "Main Event Operational", pic: "Freelance MAPID Community", priority: "High", start_date: "25 September 2026", deadline: "25 September 2026", status: "Not Started", dependency: "Day 1 executed", notes: "Output: Day 2 executed" },
-  { id: "T062", name: "Finalize Key Visual concept", workstream: "Marketing & Design", pic: "Ica / Designer Team", priority: "High", start_date: "15 Mei 2026", deadline: "28 Mei 2026", status: "In Progress", dependency: "Creative brief", notes: "Output: Key visual concept" },
-  { id: "T063", name: "Create Launch Poster assets", workstream: "Marketing & Design", pic: "Ica / Designer Team", priority: "High", start_date: "25 Mei 2026", deadline: "2 Juni 2026", status: "Not Started", dependency: "Key visual concept", notes: "Output: Launch poster assets" },
-  { id: "T064", name: "Draft landing page copy", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "High", start_date: "18 Mei 2026", deadline: "25 Mei 2026", status: "Not Started", dependency: "One pager & guidance", notes: "Output: Landing page copy" },
-  { id: "T065", name: "Publish landing page", workstream: "Marketing & Design / Tech Team", pic: "Dwi + Tech Team", priority: "High", start_date: "26 Mei 2026", deadline: "7 Juni 2026", status: "Not Started", dependency: "Landing page copy & key visual", notes: "Output: Landing page live" },
-  { id: "T066", name: "Prepare WA broadcast copy", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "Low", start_date: "26 Mei 2026", deadline: "5 Juni 2026", status: "Not Started", dependency: "Final CTA & timeline", notes: "Output: WA broadcast copy" },
-  { id: "T067", name: "Create registration campaign content", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "High", start_date: "1 Juni 2026", deadline: "26 Juni 2026", status: "Not Started", dependency: "Landing page live", notes: "Output: Campaign content" },
-  { id: "T068", name: "Create mentoring announcement assets", workstream: "Marketing & Design", pic: "Dwi + Ica", priority: "Medium", start_date: "1 Juli 2026", deadline: "29 Juli 2026", status: "Not Started", dependency: "Mentoring schedule", notes: "Output: Mentoring announcement assets" },
-  { id: "T069", name: "Create final event announcement assets", workstream: "Marketing & Design", pic: "Dwi + Ica", priority: "High", start_date: "1 September 2026", deadline: "20 September 2026", status: "Not Started", dependency: "Top 10 list & event rundown", notes: "Output: Final event assets" },
-  { id: "T070", name: "Prepare post-event publication plan", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "Medium", start_date: "15 September 2026", deadline: "25 September 2026", status: "Not Started", dependency: "Documentation plan", notes: "Output: Post-event content plan" },
-  { id: "T071", name: "Publish post-event recap and winners", workstream: "Marketing & Design", pic: "Dwi / Marketing", priority: "High", start_date: "28 September 2026", deadline: "5 Oktober 2026", status: "Not Started", dependency: "Event documentation", notes: "Output: Published recap" },
-  { id: "T072", name: "Compile sponsor report", workstream: "Post-Event & Reporting", pic: "PM / Partnership", priority: "High", start_date: "26 September 2026", deadline: "5 Oktober 2026", status: "Not Started", dependency: "Sponsor benefit checklist", notes: "Output: Sponsor report" },
-  { id: "T073", name: "Compile competition evaluation report", workstream: "Post-Event & Reporting", pic: "PM / Academic", priority: "High", start_date: "26 September 2026", deadline: "5 Oktober 2026", status: "Not Started", dependency: "Judging & participant data", notes: "Output: Evaluation report" },
-  { id: "T074", name: "Archive all documents, datasets, and outputs", workstream: "Post-Event & Reporting", pic: "PM / Lead", priority: "Medium", start_date: "28 September 2026", deadline: "5 Oktober 2026", status: "Not Started", dependency: "All final outputs", notes: "Output: Archive folder" }
-];
+type KPI = {
+  id?: number;
+  metric: string;
+  target: string;
+  current: string;
+  status: string;
+  progress: number;
+};
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [editKpiForm, setEditKpiForm] = useState<Partial<KPI>>({});
+  const [isEditingKpi, setIsEditingKpi] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -120,27 +58,41 @@ export default function DashboardPage() {
     // Connect date dynamic real time client side
     setCurrentDate(new Date());
 
-    async function fetchTasks() {
+    async function fetchDashboardData() {
       setIsLoading(true);
       try {
-        const { data } = await supabase
+        // Fetch Tasks
+        const { data: tasksData } = await supabase
           .from("catalyst_tasks")
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (data && data.length > 0) {
-          setTasks(data as Task[]);
+        if (tasksData) {
+          setTasks(tasksData as Task[]);
         } else {
-          setTasks(initialTasks);
+          setTasks([]);
+        }
+
+        // Fetch KPIs
+        const { data: kpisData } = await supabase
+          .from("catalyst_kpis")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (kpisData && kpisData.length > 0) {
+          setKpis(kpisData as KPI[]);
+        } else {
+          setKpis([]);
         }
       } catch (e) {
-        console.error("Supabase fetch failed, fallback to local:", e);
-        setTasks(initialTasks);
+        console.error("Supabase fetch failed:", e);
+        setTasks([]);
+        setKpis([]);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchTasks();
+    fetchDashboardData();
   }, []);
 
   // Format real-time clock dates
@@ -173,6 +125,31 @@ export default function DashboardPage() {
   const incompleteTasks = useMemo(() => {
     return tasks.filter(t => t.status !== "Done");
   }, [tasks]);
+
+  const blockedTasks = useMemo(() => {
+    return tasks.filter(t => t.blocker && t.blocker.trim() !== "");
+  }, [tasks]);
+
+  const weeklyPriorities = useMemo(() => {
+    const priorityWeight = { High: 3, Medium: 2, Low: 1 };
+    const sorted = [...incompleteTasks].sort((a, b) => {
+      const weightA = priorityWeight[a.priority] || 0;
+      const weightB = priorityWeight[b.priority] || 0;
+      if (weightB !== weightA) return weightB - weightA;
+      return a.id.localeCompare(b.id);
+    });
+    return sorted.slice(0, 5).map((task, idx) => {
+      let statusSuffix = "";
+      if (task.status === "Blocked") statusSuffix = " · Blocked";
+      else if (task.status === "Delayed") statusSuffix = " · Delayed";
+      
+      return {
+        num: idx + 1,
+        text: task.name,
+        meta: `${task.deadline} · PIC: ${task.pic} · ${task.id}${statusSuffix}`
+      };
+    });
+  }, [incompleteTasks]);
 
   const projectStatus = useMemo(() => {
     const isAtRisk = tasks.some(t => t.status === "Blocked" || t.status === "Delayed");
@@ -266,6 +243,76 @@ export default function DashboardPage() {
     ];
   }, [tasks]);
 
+  const getKpiStatusStyle = (status: string) => {
+    switch (status) {
+      case "Done":
+        return "text-emerald-600 bg-emerald-50 border-emerald-200";
+      case "At Risk":
+        return "text-rose-600 bg-rose-50 border-rose-200";
+      case "In Progress":
+        return "text-blue-600 bg-blue-50 border-blue-200";
+      default:
+        return "text-zinc-550 bg-zinc-100 border-zinc-200";
+    }
+  };
+
+  const displayKpis = useMemo(() => {
+    if (kpis && kpis.length > 0) {
+      return kpis.map(k => ({
+        ...k,
+        color: getKpiStatusStyle(k.status)
+      }));
+    }
+    return kpiData;
+  }, [kpis, kpiData]);
+
+  const handleEditKpiClick = (kpi: KPI) => {
+    setEditKpiForm(kpi);
+    setIsEditingKpi(true);
+  };
+
+  const handleSaveKpi = async () => {
+    if (!editKpiForm.metric) return;
+
+    // Optimistically update local state
+    const updated = kpis.map(k => k.metric === editKpiForm.metric ? (editKpiForm as KPI) : k);
+    setKpis(updated.length > 0 ? updated : [editKpiForm as KPI]);
+    setIsEditingKpi(false);
+
+    try {
+      if (editKpiForm.id) {
+        await supabase
+          .from("catalyst_kpis")
+          .update({
+            target: editKpiForm.target,
+            current: editKpiForm.current,
+            status: editKpiForm.status,
+            progress: editKpiForm.progress
+          })
+          .eq("id", editKpiForm.id);
+      } else {
+        await supabase
+          .from("catalyst_kpis")
+          .upsert({
+            metric: editKpiForm.metric,
+            target: editKpiForm.target,
+            current: editKpiForm.current,
+            status: editKpiForm.status,
+            progress: editKpiForm.progress
+          }, { onConflict: "metric" });
+        
+        // Re-fetch to synchronize DB IDs
+        const { data } = await supabase
+          .from("catalyst_kpis")
+          .select("*")
+          .order("id", { ascending: true });
+        if (data) setKpis(data as KPI[]);
+      }
+    } catch (e) {
+      console.error("Error saving KPI to Supabase:", e);
+    }
+  };
+
   const progressBarColor: Record<string, string> = {
     "At Risk": "bg-rose-500",
     "In Progress": "bg-blue-500",
@@ -276,7 +323,7 @@ export default function DashboardPage() {
   const getPriorityStyle = (priority: Task["priority"]) => {
     switch (priority) {
       case "High": return "bg-rose-50 text-rose-700 border-rose-100 font-bold";
-      case "Medium": return "bg-amber-50 text-amber-750 border-amber-100";
+      case "Medium": return "bg-amber-50 text-amber-755 border-amber-100";
       default: return "bg-zinc-50 text-zinc-500 border-zinc-150";
     }
   };
@@ -411,32 +458,28 @@ export default function DashboardPage() {
 
         {/* Right Columns */}
         <div className="lg:col-span-1 space-y-4">
-          
-          {/* Dynamic Critical Blockers */}
+            {/* Dynamic Critical Blockers */}
           <Card className="bg-rose-50/20 border border-rose-100 rounded-3xl p-5 shadow-sm">
             <div className="flex items-center gap-2 border-b border-rose-100 pb-3 mb-3">
               <WarningCircle className="text-rose-600 shrink-0" size={18} weight="fill" />
-              <h3 className="font-extrabold text-sm text-zinc-900">Critical Blockers (2)</h3>
+              <h3 className="font-extrabold text-sm text-zinc-900">Critical Blockers ({blockedTasks.length})</h3>
             </div>
             <div className="space-y-3">
-              <div className="p-3.5 bg-white border border-rose-100 rounded-2xl shadow-xs">
-                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-100 rounded-lg">
-                  Sponsorship & Outreach
-                </span>
-                <p className="text-xs font-black text-zinc-900 mt-2">Sponsor Proposal Belum Dikirim</p>
-                <p className="text-[10px] text-zinc-550 leading-relaxed mt-1 font-semibold">
-                  Menghambat proses outreach sponsor dan partnership. Harus final sebelum <span className="text-rose-600 font-bold">24 Juli 2026</span>.
-                </p>
-              </div>
-              <div className="p-3.5 bg-white border border-rose-100 rounded-2xl shadow-xs">
-                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-100 rounded-lg">
-                  Data & Spatial Tech
-                </span>
-                <p className="text-xs font-black text-zinc-900 mt-2">Standardisasi Dataset Menu Go</p>
-                <p className="text-[10px] text-zinc-550 leading-relaxed mt-1 font-semibold">
-                  Menghambat Data Dictionary, Sample Dataset, dan API/Data Access Guide.
-                </p>
-              </div>
+              {blockedTasks.length === 0 ? (
+                <p className="text-xs text-zinc-400 font-medium py-4 text-center">Tidak ada blocker kritis saat ini.</p>
+              ) : (
+                blockedTasks.map(task => (
+                  <div key={task.id} className="p-3.5 bg-white border border-rose-100 rounded-2xl shadow-xs">
+                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-100 rounded-lg">
+                      {task.workstream}
+                    </span>
+                    <p className="text-xs font-black text-zinc-900 mt-2">{task.name}</p>
+                    <p className="text-[10px] text-zinc-550 leading-relaxed mt-1 font-semibold">
+                      {task.blocker}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
 
@@ -447,23 +490,21 @@ export default function DashboardPage() {
               <h3 className="font-extrabold text-sm text-zinc-900">This Week Priority</h3>
             </div>
             <div className="space-y-2.5">
-              {[
-                { num: 1, text: "Finalisasi FAQ & Panduan Kompetisi", meta: "25 Mei · PIC: Fariz · T004, T006" },
-                { num: 2, text: "Template Campaign GEO MAPID", meta: "26 Mei · PIC: Tech Team · T009" },
-                { num: 3, text: "Desain Key Visual & Launch Poster", meta: "28 Mei · PIC: Ica · T012, T013" },
-                { num: 4, text: "Sponsor Proposal & Benefit Package", meta: "24 Juli · PIC: Aulia · T014 · Blocked" },
-                { num: 5, text: "Clean Menu Go 15 May Data", meta: "24 Mei · PIC: Data Team · T017 · Not Started" }
-              ].map(item => (
-                <div key={item.num} className="flex gap-2.5 p-2 hover:bg-zinc-50 rounded-xl transition duration-200">
-                  <div className="w-5.5 h-5.5 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-[10px] font-extrabold mt-0.5 border border-indigo-100">
-                    {item.num}
+              {weeklyPriorities.length === 0 ? (
+                <p className="text-xs text-zinc-400 font-medium py-4 text-center">Tidak ada tugas prioritas minggu ini.</p>
+              ) : (
+                weeklyPriorities.map(item => (
+                  <div key={item.num} className="flex gap-2.5 p-2 hover:bg-zinc-50 rounded-xl transition duration-200">
+                    <div className="w-5.5 h-5.5 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-[10px] font-extrabold mt-0.5 border border-indigo-100">
+                      {item.num}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-zinc-900 leading-snug">{item.text}</p>
+                      <p className="text-[10px] text-zinc-450 mt-0.5 font-semibold leading-none">{item.meta}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-black text-zinc-900 leading-snug">{item.text}</p>
-                    <p className="text-[10px] text-zinc-450 mt-0.5 font-semibold leading-none">{item.meta}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
         </div>
@@ -482,9 +523,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpiData.map((kpi, idx) => (
-            <div key={idx} className="p-4 border border-zinc-150 bg-zinc-50/50 rounded-2xl space-y-2.5 shadow-xs flex flex-col justify-between">
-              <div className="space-y-1">
+          {displayKpis.map((kpi, idx) => (
+            <div key={idx} className="relative group p-4 border border-zinc-150 bg-zinc-50/50 rounded-2xl space-y-2.5 shadow-xs flex flex-col justify-between">
+              <button 
+                onClick={() => handleEditKpiClick(kpi)}
+                className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-950 transition opacity-0 group-hover:opacity-100 shadow-xs cursor-pointer z-10"
+                title={`Edit ${kpi.metric}`}
+              >
+                <PencilSimple size={12} />
+              </button>
+              <div className="space-y-1 pr-6">
                 <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded border tracking-wide whitespace-nowrap ${kpi.color}`}>
                   {kpi.status}
                 </span>
@@ -524,6 +572,101 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* KPI Editor Modal Overlay */}
+      {isEditingKpi && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white border border-zinc-200 shadow-2xl rounded-3xl p-6 w-full max-w-md mx-4 animate-[scaleIn_0.2s_ease-out] space-y-4">
+            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+              <h3 className="font-extrabold text-base text-zinc-950 flex items-center gap-2">
+                <PencilSimple size={18} className="text-indigo-650" /> Edit KPI Metrics
+              </h3>
+              <button 
+                onClick={() => setIsEditingKpi(false)}
+                className="p-1 hover:bg-zinc-100 rounded-lg text-zinc-400 hover:text-zinc-700 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs font-semibold text-zinc-750">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">KPI Metric Name</label>
+                <Input 
+                  type="text" 
+                  value={editKpiForm.metric || ""} 
+                  disabled
+                  className="bg-zinc-100 border-zinc-200 text-zinc-500 rounded-xl py-2 px-3 text-xs cursor-not-allowed font-bold" 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Target</label>
+                  <Input 
+                    type="text" 
+                    value={editKpiForm.target || ""} 
+                    onChange={(e) => setEditKpiForm({ ...editKpiForm, target: e.target.value })}
+                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950 font-medium" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Current Value</label>
+                  <Input 
+                    type="text" 
+                    value={editKpiForm.current || ""} 
+                    onChange={(e) => setEditKpiForm({ ...editKpiForm, current: e.target.value })}
+                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950 font-medium" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Status</label>
+                  <select 
+                    value={editKpiForm.status || "Not Started"}
+                    onChange={(e) => setEditKpiForm({ ...editKpiForm, status: e.target.value })}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs font-semibold text-zinc-800 focus:outline-none"
+                  >
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                    <option value="At Risk">At Risk</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Progress ({editKpiForm.progress || 0}%)</label>
+                  <Input 
+                    type="number" 
+                    min={0}
+                    max={100}
+                    value={editKpiForm.progress !== undefined ? editKpiForm.progress : 0} 
+                    onChange={(e) => setEditKpiForm({ ...editKpiForm, progress: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
+                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950 font-mono font-bold" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-3 border-t border-zinc-100">
+              <Button 
+                onClick={() => setIsEditingKpi(false)}
+                variant="outline"
+                className="bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-650 text-xs font-semibold py-2 px-4 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveKpi}
+                className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-1 cursor-pointer"
+              >
+                Save KPI
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Premium Loading Spinner Modal Overlay */}
       {isLoading && (

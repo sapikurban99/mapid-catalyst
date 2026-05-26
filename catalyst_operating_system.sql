@@ -202,3 +202,31 @@ CREATE TABLE catalyst_documents (
 
 ALTER TABLE catalyst_documents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public access on catalyst_documents" ON catalyst_documents FOR ALL USING (true) WITH CHECK (true);
+
+-- ==========================================
+-- Table 5: catalyst_kpis
+-- ==========================================
+DROP TABLE IF EXISTS catalyst_kpis CASCADE;
+CREATE TABLE catalyst_kpis (
+    id SERIAL PRIMARY KEY,
+    metric VARCHAR(255) NOT NULL,
+    target VARCHAR(255) NOT NULL,
+    current VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL, -- 'Not Started', 'In Progress', 'Done', 'At Risk'
+    progress INTEGER NOT NULL DEFAULT 0, -- 0 to 100
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE catalyst_kpis ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public access on catalyst_kpis" ON catalyst_kpis FOR ALL USING (true) WITH CHECK (true);
+
+-- Seed catalyst_kpis
+INSERT INTO catalyst_kpis (metric, target, current, status, progress) VALUES
+('Sponsor Confirmed', '4 Partners', '0 Confirmed', 'Not Started', 0),
+('Dataset Ready', '5 Datasets', '0/5 Ready', 'Not Started', 0),
+('Document Ready', '12 Docs', '0/12 Ready', 'Not Started', 0),
+('Curated Teams', '50 Teams', '0 Teams', 'Not Started', 0),
+('Top Finalists', '10 Teams', '0 Teams', 'Not Started', 0),
+('Key Visual Ready', '1 Master Visual', '0', 'Not Started', 0),
+('Landing Page Live', 'Live Site', 'Offline', 'Not Started', 0),
+('Venue Confirmed', 'BINUS Auditorium', 'In Negotiation', 'Not Started', 0);
