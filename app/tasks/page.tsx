@@ -17,7 +17,8 @@ import {
   Plus,
   PencilSimple,
   FloppyDisk,
-  X
+  X,
+  SpinnerGap
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,7 +31,7 @@ type Task = {
   workstream: string;
   pic: string;
   priority: "High" | "Medium" | "Low";
-  start_date?: string;
+  start_date: string;
   deadline: string;
   status: "Not Started" | "In Progress" | "Waiting Review" | "Blocked" | "Done" | "Delayed";
   dependency?: string;
@@ -47,6 +48,8 @@ export default function TasksPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Task>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const workstreams = [
     "All",
@@ -94,7 +97,7 @@ export default function TasksPage() {
       case "Done": return "bg-emerald-100 text-emerald-800 border-emerald-200";
       case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
       case "Waiting Review": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "Blocked": return "bg-rose-100 text-rose-800 border-rose-250 ring-2 ring-rose-50";
+      case "Blocked": return "bg-rose-100 text-rose-800 border-rose-200 ring-2 ring-rose-50";
       case "Delayed": return "bg-amber-100 text-amber-800 border-amber-200";
       default: return "bg-zinc-100 text-zinc-600 border-zinc-200";
     }
@@ -115,20 +118,34 @@ export default function TasksPage() {
 
   const handleSave = async () => {
     if (!editForm.name || !editForm.id) return;
+    setSaveFeedback(null);
 
-    // Update local state (optimistic)
-    const updated = localTasks.map(t => t.id === editForm.id ? (editForm as Task) : t);
+    const updatedTask = {
+      ...editForm,
+      start_date: editForm.start_date || editForm.deadline || "",
+    } as Task;
+
+    const updated = localTasks.map(t => t.id === editForm.id ? updatedTask : t);
     setLocalTasks(updated);
-    setSelectedTaskDetail(editForm as Task);
-    setIsEditing(false);
+    setSelectedTaskDetail(updatedTask);
 
-    // Save to Supabase in the background
+    setSaving(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from("catalyst_tasks")
-        .upsert(editForm);
-    } catch (e) {
+        .upsert(updatedTask);
+      if (error) {
+        console.error("Error writing task to Supabase:", error);
+        setSaveFeedback({ type: "error", message: "Gagal menyimpan: " + error.message });
+      } else {
+        setIsEditing(false);
+        setSaveFeedback({ type: "success", message: "Task berhasil disimpan" });
+      }
+    } catch (e: any) {
       console.error("Error writing task to Supabase:", e);
+      setSaveFeedback({ type: "error", message: "Gagal menyimpan ke database" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -136,20 +153,27 @@ export default function TasksPage() {
     setLocalTasks(localTasks.filter(t => t.id !== id));
     setSelectedTaskDetail(null);
     setIsEditing(false);
+    setSaveFeedback(null);
     try {
-      await supabase.from("catalyst_tasks").delete().eq("id", id);
+      const { error } = await supabase.from("catalyst_tasks").delete().eq("id", id);
+      if (error) {
+        console.error("Error deleting task:", error);
+        setSaveFeedback({ type: "error", message: "Gagal menghapus task" });
+      }
     } catch (e) {
       console.error("Error deleting task:", e);
+      setSaveFeedback({ type: "error", message: "Gagal menghapus task" });
     }
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     const newTask: Task = {
       id: crypto.randomUUID(),
       name: "Standardized Task Name",
       workstream: activeWorkstream === "All" ? "Program Management" : activeWorkstream,
       pic: "Hadi / Lead",
       priority: "Medium",
+      start_date: "1 Juni 2026",
       deadline: "10 Juni 2026",
       status: "Not Started",
       notes: "Tulis detail tugas baru di sini."
@@ -157,7 +181,25 @@ export default function TasksPage() {
 
     setLocalTasks([newTask, ...localTasks]);
     setSelectedTaskDetail(newTask);
-    handleEditClick(newTask);
+    setIsEditing(true);
+    setEditForm(newTask);
+    setSaveFeedback(null);
+
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("catalyst_tasks").insert(newTask);
+      if (error) {
+        console.error("Error creating task:", error);
+        setSaveFeedback({ type: "error", message: "Gagal menyimpan ke database: " + error.message });
+      } else {
+        setSaveFeedback({ type: "success", message: "Task berhasil dibuat" });
+      }
+    } catch (e: any) {
+      console.error("Error writing task to Supabase:", e);
+      setSaveFeedback({ type: "error", message: "Gagal menyimpan ke database" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -170,9 +212,11 @@ export default function TasksPage() {
         </div>
         <Button
           onClick={handleCreateNew}
-          className="bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer self-start"
+          disabled={saving}
+          className="bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-60 self-start"
         >
-          <Plus weight="bold" /> Add Task
+          {saving ? <SpinnerGap size={16} weight="bold" className="animate-spin" /> : <Plus weight="bold" />}
+          {saving ? "Creating..." : "Add Task"}
         </Button>
       </div>
 
@@ -293,10 +337,24 @@ export default function TasksPage() {
                   <h3 className="font-bold text-sm text-zinc-900 flex items-center gap-1.5">
                     <PencilSimple size={16} /> Edit Task Data
                   </h3>
-                  <button onClick={() => setIsEditing(false)} className="text-zinc-400 hover:text-zinc-600">
+                  <button onClick={() => { setIsEditing(false); setSaveFeedback(null); }} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
                     <X size={16} />
                   </button>
                 </div>
+
+                {saveFeedback && (
+                  <div className={`text-xs font-semibold rounded-xl p-2.5 flex items-center gap-2 ${
+                    saveFeedback.type === "success"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-150"
+                      : "bg-rose-50 text-rose-700 border border-rose-150"
+                  }`}>
+                    {saveFeedback.type === "success"
+                      ? <CheckCircle size={16} weight="fill" />
+                      : <WarningCircle size={16} weight="fill" />
+                    }
+                    {saveFeedback.message}
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <div className="space-y-1">
@@ -359,6 +417,27 @@ export default function TasksPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase">Start Date</label>
+                      <Input 
+                        type="text" 
+                        value={editForm.start_date || ""} 
+                        onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                        className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase">Dependency</label>
+                      <Input 
+                        type="text" 
+                        value={editForm.dependency || ""} 
+                        onChange={(e) => setEditForm({ ...editForm, dependency: e.target.value })}
+                        className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
                       <label className="text-[10px] font-bold text-zinc-400 uppercase">Priority</label>
                       <select 
                         value={editForm.priority || "Medium"}
@@ -371,11 +450,12 @@ export default function TasksPage() {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase">Dependency</label>
+                      <label className="text-[10px] font-bold text-zinc-400 uppercase">Doc Link</label>
                       <Input 
                         type="text" 
-                        value={editForm.dependency || ""} 
-                        onChange={(e) => setEditForm({ ...editForm, dependency: e.target.value })}
+                        value={editForm.doc_link || ""} 
+                        onChange={(e) => setEditForm({ ...editForm, doc_link: e.target.value })}
+                        placeholder="https://..."
                         className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs focus:ring-zinc-950" 
                       />
                     </div>
@@ -407,21 +487,25 @@ export default function TasksPage() {
                     type="button"
                     onClick={() => handleDeleteTask(editForm.id as string)}
                     variant="ghost"
-                    className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                    disabled={saving}
+                    className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-40"
                   >
                     <TrashSimple size={14} className="mr-1" /> Hapus
                   </Button>
                   <div className="flex gap-2">
                     <Button 
                       onClick={handleSave}
-                      className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-1 cursor-pointer"
+                      disabled={saving}
+                      className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
                     >
-                      <FloppyDisk size={14} /> Save Task
+                      {saving ? <SpinnerGap size={14} className="animate-spin" /> : <FloppyDisk size={14} />}
+                      {saving ? "Saving..." : "Save Task"}
                     </Button>
                     <Button 
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => { setIsEditing(false); setSaveFeedback(null); }}
                       variant="outline"
-                      className="bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-650 text-xs font-semibold py-2 px-4 rounded-xl"
+                      disabled={saving}
+                      className="bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-650 text-xs font-semibold py-2 px-4 rounded-xl cursor-pointer"
                     >
                       Cancel
                     </Button>
@@ -446,7 +530,7 @@ export default function TasksPage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs font-medium border-b border-zinc-150 pb-4">
+                <div className="grid grid-cols-3 gap-4 text-xs font-medium border-b border-zinc-150 pb-4">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase">Penanggung Jawab (PIC)</p>
                     <p className="text-zinc-855 flex items-center gap-1.5 font-bold">
@@ -457,6 +541,12 @@ export default function TasksPage() {
                     <p className="text-[10px] font-bold text-zinc-400 uppercase">Tenggat Waktu</p>
                     <p className="text-zinc-800 flex items-center gap-1.5 font-mono">
                       <CalendarBlank size={14} className="text-zinc-400" /> {selectedTaskDetail.deadline}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Tanggal Mulai</p>
+                    <p className="text-zinc-800 flex items-center gap-1.5 font-mono text-xs">
+                      <CalendarBlank size={14} className="text-zinc-400" /> {selectedTaskDetail.start_date}
                     </p>
                   </div>
                 </div>
