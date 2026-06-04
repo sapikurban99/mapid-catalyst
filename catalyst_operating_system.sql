@@ -57,14 +57,21 @@ CREATE TABLE catalyst_tasks (
     workstream VARCHAR(100) NOT NULL,
     pic VARCHAR(100) NOT NULL,
     priority VARCHAR(50) NOT NULL,
-    start_date VARCHAR(50) NOT NULL,
+    start_date VARCHAR(50),
     deadline VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL,
     dependency TEXT,
     notes TEXT,
     blocker TEXT,
+    doc_link TEXT,
+    phase_id VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migration helpers for existing installs (safe to re-run)
+ALTER TABLE catalyst_tasks ALTER COLUMN start_date DROP NOT NULL;
+ALTER TABLE catalyst_tasks ADD COLUMN IF NOT EXISTS phase_id VARCHAR(50);
+ALTER TABLE catalyst_tasks ADD COLUMN IF NOT EXISTS doc_link TEXT;
 
 ALTER TABLE catalyst_tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public access on catalyst_tasks" ON catalyst_tasks FOR ALL USING (true) WITH CHECK (true);

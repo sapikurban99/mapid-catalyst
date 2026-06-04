@@ -42,6 +42,7 @@ type Task = {
   doc_link?: string;
   blocker?: string;
   notes?: string;
+  phase_id?: string | null;
 };
 
 // High-fidelity fallback events containing the exact 17 timeline phases
@@ -341,9 +342,10 @@ const getPhaseRelatedTasks = (phaseId: string, allTasks: Task[]): Task[] => {
     "P020": ["T053", "T055", "T056", "T057", "T058", "T061", "T069"],
     "P021": ["T066", "T070", "T071", "T072", "T073", "T074"]
   };
-  
-  const targetIds = mapping[phaseId] || [];
-  return allTasks.filter(t => targetIds.includes(t.id));
+
+  const seedIds = new Set(mapping[phaseId] || []);
+  // Hardcoded seed mapping OR explicit phase_id from DB — task baru pakai phase_id
+  return allTasks.filter(t => seedIds.has(t.id) || t.phase_id === phaseId);
 };
 
 const getAssociatedWorkstreams = (type: string, name: string): string[] => {
