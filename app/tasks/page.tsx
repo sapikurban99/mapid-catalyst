@@ -143,6 +143,8 @@ export default function TasksPage() {
   const [activeWorkstream, setActiveWorkstream] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const [selected, setSelected] = useState<Task | null>(null);
 
@@ -189,6 +191,13 @@ export default function TasksPage() {
       return true;
     });
   }, [tasks, activeWorkstream, statusFilter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
 
   const stats = useMemo(() => {
     const total = tasks.length;
@@ -344,7 +353,7 @@ export default function TasksPage() {
           <MagnifyingGlass size={14} className="text-zinc-400 shrink-0" />
           <Input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Cari nama, PIC, atau task ID…"
             className="flex-1 bg-zinc-50 border-zinc-200 rounded-lg text-xs h-8"
           />
@@ -356,7 +365,7 @@ export default function TasksPage() {
             {["All", ...WORKSTREAMS].map(ws => (
               <button
                 key={ws}
-                onClick={() => { setActiveWorkstream(ws); setSelected(null); }}
+                onClick={() => { setActiveWorkstream(ws); setSelected(null); setPage(1); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap shrink-0 ${
                   activeWorkstream === ws
                     ? "bg-zinc-950 text-white border-zinc-950 shadow-sm"
@@ -376,7 +385,7 @@ export default function TasksPage() {
               {["All", ...STATUSES].map(st => (
                 <button
                   key={st}
-                  onClick={() => { setStatusFilter(st); setSelected(null); }}
+                  onClick={() => { setStatusFilter(st); setSelected(null); setPage(1); }}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer whitespace-nowrap shrink-0 ${
                     statusFilter === st
                       ? "bg-zinc-900 text-white border-zinc-900"
@@ -390,6 +399,7 @@ export default function TasksPage() {
           </div>
           <div className="text-xs font-semibold text-zinc-400 shrink-0">
             <span className="text-zinc-950 font-bold">{filtered.length}</span> dari {tasks.length} tugas
+            {totalPages > 1 && <span className="ml-2">· Hal {safePage}/{totalPages}</span>}
           </div>
         </div>
       </div>
@@ -436,7 +446,7 @@ export default function TasksPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map(task => (
+                  paginated.map(task => (
                     <tr
                       key={task.id}
                       onClick={() => setSelected(task)}
@@ -464,6 +474,39 @@ export default function TasksPage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-100 mt-4">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+              >
+                ← Prev
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-7 h-7 text-xs font-bold rounded-lg transition cursor-pointer ${
+                      p === safePage
+                        ? "bg-zinc-950 text-white"
+                        : "bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </Card>
 
         <div className="lg:col-span-1">

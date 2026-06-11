@@ -825,7 +825,7 @@ function GanttChart({
 }
 
 export default function TimelineView({ initialEvents, initialTasks = [] }: { initialEvents: TimelineEvent[]; initialTasks?: Task[] }) {
-  const [activeTab, setActiveTab] = useState<"list" | "calendar" | "gantt">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "calendar">("list");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   
   // Use DB events, fallback to default high-fidelity events if DB is empty
@@ -840,6 +840,13 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   
   // Track which phases have their task list collapsed/hidden
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+
+  // Pagination for list view
+  const [listPage, setListPage] = useState(1);
+  const LIST_PAGE_SIZE = 8;
+
+  // Calendar sub-mode: "calendar" or "gantt"
+  const [calendarMode, setCalendarMode] = useState<"calendar" | "gantt">("calendar");
 
   // Toggle show/hide for a specific phase
   const togglePhaseTasks = (phaseId: string) => {
@@ -1126,16 +1133,6 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
             >
               <CalendarBlank weight="bold" /> Calendar
             </button>
-            <button 
-              onClick={() => setActiveTab("gantt")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                activeTab === "gantt" 
-                  ? "bg-white text-zinc-950 shadow-sm" 
-                  : "text-zinc-600 hover:text-zinc-900"
-              }`}
-            >
-              <ChartBar weight="bold" /> Gantt
-            </button>
           </div>
           
           <Button 
@@ -1148,10 +1145,32 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       </div>
 
       {/* LIST VIEW TAB */}
-      {activeTab === "list" && (
+      {activeTab === "list" && (() => {
+        const listTotalPages = Math.max(1, Math.ceil(events.length / LIST_PAGE_SIZE));
+        const listSafePage = Math.min(listPage, listTotalPages);
+        const paginatedEvents = events.slice((listSafePage - 1) * LIST_PAGE_SIZE, listSafePage * LIST_PAGE_SIZE);
+
+        return (
         <Card className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-zinc-400 font-semibold">
+              Menampilkan <span className="text-zinc-900 font-bold">{(listSafePage - 1) * LIST_PAGE_SIZE + 1}–{Math.min(listSafePage * LIST_PAGE_SIZE, events.length)}</span> dari <span className="text-zinc-900 font-bold">{events.length}</span> fase
+            </p>
+            {listTotalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button onClick={() => setListPage(p => Math.max(1, p - 1))} disabled={listSafePage <= 1}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">← Prev</button>
+                {Array.from({ length: listTotalPages }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setListPage(p)}
+                    className={`w-7 h-7 text-xs font-bold rounded-lg transition cursor-pointer ${p === listSafePage ? "bg-zinc-950 text-white" : "bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50"}`}>{p}</button>
+                ))}
+                <button onClick={() => setListPage(p => Math.min(listTotalPages, p + 1))} disabled={listSafePage >= listTotalPages}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">Next →</button>
+              </div>
+            )}
+          </div>
           <div className="space-y-0 relative before:absolute before:inset-y-2 before:left-[147px] before:w-[2px] before:bg-zinc-100">
-            {events.map((event, index) => {
+            {paginatedEvents.map((event, index) => {
               let dotColor = "bg-zinc-300 ring-zinc-100";
               let cardBg = "bg-zinc-50 hover:bg-zinc-100/70";
               let cardBorder = "border-zinc-200";
@@ -1345,17 +1364,16 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                                       </div>
                                     </div>
 
-                                    {/* Visual Timeline Slider bar */}
-                                    <div className="relative h-6 bg-white border border-zinc-200 rounded-lg overflow-hidden flex items-center px-1">
-                                      <div className="absolute inset-y-0 left-0 w-0.5 bg-zinc-200" />
-                                      <div 
-                                        className={`h-4 rounded-md ${barColor} transition-all duration-500 shadow-sm relative flex items-center min-w-[20px]`}
-                                        style={{ width: `${pct}%` }}
-                                      >
-                                        <span className="absolute right-1 text-[8px] font-black text-white px-1">
-                                          {Math.round(pct)}%
-                                        </span>
-                                      </div>
+                                    {/* Progress percentage */}
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                                      <span className={`px-1.5 py-0.5 rounded ${
+                                        task.status === 'Done' ? 'bg-emerald-50 text-emerald-700' :
+                                        task.status === 'In Progress' ? 'bg-blue-50 text-blue-700' :
+                                        task.status === 'Blocked' ? 'bg-rose-50 text-rose-700' :
+                                        'bg-zinc-100 text-zinc-600'
+                                      }`}>
+                                        {task.status === 'Done' ? '100%' : task.status === 'In Progress' ? '50%' : task.status === 'Blocked' ? '0%' : '0%'}
+                                      </span>
                                     </div>
                                   </div>
                                 );
@@ -1371,11 +1389,38 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
             })}
           </div>
         </Card>
-      )}
+        );
+      })()}
 
       {/* CALENDAR VIEW TAB */}
       {activeTab === "calendar" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
+          {/* Calendar/Gantt sub-tabs */}
+          <div className="bg-white border border-zinc-200 rounded-3xl p-1.5 shadow-sm flex gap-1 self-start">
+            <button
+              onClick={() => setCalendarMode("calendar")}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                calendarMode === "calendar"
+                  ? "bg-zinc-950 text-white shadow-sm"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <CalendarBlank weight="bold" size={15} /> Calendar
+            </button>
+            <button
+              onClick={() => setCalendarMode("gantt")}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                calendarMode === "gantt"
+                  ? "bg-zinc-950 text-white shadow-sm"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <ChartBar weight="bold" size={15} /> Gantt Chart
+            </button>
+          </div>
+
+          {calendarMode === "calendar" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: The Main Calendar Grid */}
           <Card className="lg:col-span-2 bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
             <div>
@@ -1635,11 +1680,15 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
             </Card>
           </div>
         </div>
-      )}
-
-      {/* GANTT CHART TAB */}
-      {activeTab === "gantt" && (
-        <GanttChart events={events} tasks={tasks} activeEventId={activeEventId} handleTaskStatusChange={handleTaskStatusChange} />
+          ) : (
+            <GanttChart
+              events={events}
+              tasks={tasks}
+              activeEventId={activeEventId}
+              handleTaskStatusChange={handleTaskStatusChange}
+            />
+          )}
+        </div>
       )}
 
       {/* Mock Add Event Modal */}
