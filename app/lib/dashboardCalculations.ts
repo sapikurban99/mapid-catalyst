@@ -1,7 +1,22 @@
 import type { Task, KPI, ProjectStatus, WeeklyPriority, BlockedTask } from "../types/dashboard";
 
+const ID_MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+function parseDeadline(deadline: string): number {
+  if (!deadline) return Infinity;
+  const parts = deadline.trim().split(/\s+/);
+  if (parts.length < 3) return Infinity;
+  const day = parseInt(parts[0], 10);
+  const month = ID_MONTHS.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+  const year = parseInt(parts[2], 10);
+  if (isNaN(day) || month === -1 || isNaN(year)) return Infinity;
+  return new Date(year, month, day).getTime();
+}
+
 export function getIncompleteTasks(tasks: Task[]) {
-  return tasks.filter((t) => t.status !== "Done");
+  return tasks
+    .filter((t) => t.status !== "Done")
+    .sort((a, b) => parseDeadline(a.deadline) - parseDeadline(b.deadline));
 }
 
 export function getBlockedTasks(tasks: Task[]): BlockedTask[] {

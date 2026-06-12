@@ -14,7 +14,7 @@ const DEFAULT_MILESTONES: MilestoneConfig = {
   mainEventDate: "2026-09-24",
 };
 
-function loadMilestones(): MilestoneConfig {
+function loadMilestonesLocal(): MilestoneConfig {
   if (typeof window === "undefined") return DEFAULT_MILESTONES;
   try {
     const stored = localStorage.getItem("catalyst_milestones");
@@ -23,9 +23,39 @@ function loadMilestones(): MilestoneConfig {
   return DEFAULT_MILESTONES;
 }
 
-function saveMilestones(config: MilestoneConfig) {
+function saveMilestonesLocal(config: MilestoneConfig) {
   if (typeof window === "undefined") return;
   localStorage.setItem("catalyst_milestones", JSON.stringify(config));
+}
+
+async function loadMilestonesFromSupabase(): Promise<MilestoneConfig | null> {
+  try {
+    const { data, error } = await supabase
+      .from("catalyst_config")
+      .select("key, value")
+      .in("key", ["registrationDate", "mainEventDate"]);
+    if (error || !data || data.length === 0) return null;
+    const cfg: Partial<MilestoneConfig> = {};
+    data.forEach((row: { key: string; value: string }) => {
+      if (row.key === "registrationDate") cfg.registrationDate = row.value;
+      if (row.key === "mainEventDate") cfg.mainEventDate = row.value;
+    });
+    if (cfg.registrationDate && cfg.mainEventDate) return cfg as MilestoneConfig;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveMilestonesToSupabase(config: MilestoneConfig) {
+  try {
+    await supabase.from("catalyst_config").upsert([
+      { key: "registrationDate", value: config.registrationDate },
+      { key: "mainEventDate", value: config.mainEventDate },
+    ]);
+  } catch (e) {
+    console.error("Failed to save milestones to Supabase:", e);
+  }
 }
 
 export function useDashboardData() {
@@ -38,7 +68,15 @@ export function useDashboardData() {
 
   useEffect(() => {
     setCurrentDate(new Date());
-    setMilestones(loadMilestones());
+    // Set from localStorage immediately, then sync from Supabase
+    const local = loadMilestonesLocal();
+    setMilestones(local);
+    loadMilestonesFromSupabase().then((remote) => {
+      if (remote) {
+        setMilestones(remote);
+        saveMilestonesLocal(remote);
+      }
+    });
 
     async function fetchDashboardData() {
       setIsLoading(true);
@@ -101,7 +139,8 @@ export function useDashboardData() {
       [field === "registration" ? "registrationDate" : "mainEventDate"]: value,
     };
     setMilestones(updated);
-    saveMilestones(updated);
+    saveMilestonesLocal(updated);
+    saveMilestonesToSupabase(updated);
   };
 
   return {

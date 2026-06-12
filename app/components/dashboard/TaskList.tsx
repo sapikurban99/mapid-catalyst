@@ -123,21 +123,9 @@ export function TaskList({ tasks }: Props) {
           >
             ← Prev
           </button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`w-7 h-7 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  p === safePage
-                    ? "bg-zinc-950 text-white"
-                    : "bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs font-semibold text-zinc-400">
+            Hal <span className="text-zinc-700 font-bold">{safePage}</span>/{totalPages}
+          </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safePage >= totalPages}

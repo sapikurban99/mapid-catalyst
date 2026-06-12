@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { 
-  TreeStructure, 
-  Users, 
-  EnvelopeSimple, 
-  Phone, 
-  Plus, 
-  Trash, 
-  PencilSimple, 
-  FloppyDisk, 
-  X, 
-  Database, 
-  ClipboardText, 
-  WarningCircle, 
-  Sparkle, 
+import { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  TreeStructure,
+  Users,
+  EnvelopeSimple,
+  Phone,
+  Plus,
+  Trash,
+  PencilSimple,
+  FloppyDisk,
+  X,
+  Database,
+  ClipboardText,
+  WarningCircle,
+  Sparkle,
   Info,
   ArrowRight,
   ShieldCheck,
@@ -96,6 +96,13 @@ export default function OrgStructurePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<OrgMember>>({});
   const [showCopied, setShowCopied] = useState(false);
+  const [toasts, setToasts] = useState<{ id: number; kind: "success" | "error"; text: string }[]>([]);
+
+  const pushToast = useCallback((kind: "success" | "error", text: string) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, kind, text }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
 
   // DDL String for quick copy feature
   const sqlSnippet = `-- Jalankan SQL ini di Editor Supabase Anda:
@@ -197,18 +204,21 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
   const handleSave = async () => {
     if (!editForm.name || !editForm.id) return;
 
-    // Optimistic Update
-    const updated = members.map(m => m.id === editForm.id ? (editForm as OrgMember) : m);
+    const isNew = !members.some(m => m.id === editForm.id);
+    const updated = isNew
+      ? [...members, editForm as OrgMember]
+      : members.map(m => m.id === editForm.id ? (editForm as OrgMember) : m);
     setMembers(updated);
     setSelectedMember(editForm as OrgMember);
     setIsEditing(false);
 
-    // Save to Supabase (only if connected, otherwise keep in sandbox)
     if (dbStatus === "connected") {
       try {
         await supabase.from("catalyst_org_members").upsert(editForm);
+        pushToast("success", `${(editForm as OrgMember).name} berhasil disimpan.`);
       } catch (e) {
         console.error("Error writing org member to Supabase:", e);
+        pushToast("error", "Gagal menyimpan ke Supabase.");
       }
     }
   };
@@ -224,9 +234,9 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
       phone: "0812-xxxx-xxxx"
     };
 
-    setMembers([...members, newMember]);
     setSelectedMember(newMember);
-    handleEditClick(newMember);
+    setEditForm(newMember);
+    setIsEditing(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -238,8 +248,10 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
     if (dbStatus === "connected") {
       try {
         await supabase.from("catalyst_org_members").delete().eq("id", id);
+        pushToast("success", "Anggota berhasil dihapus.");
       } catch (e) {
         console.error("Error deleting from Supabase:", e);
+        pushToast("error", "Gagal menghapus anggota.");
       }
     }
   };
@@ -531,7 +543,11 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
                   <h3 className="font-bold text-sm text-zinc-900 flex items-center gap-1.5">
                     <PencilSimple size={16} /> Edit Member Profile
                   </h3>
-                  <button onClick={() => setIsEditing(false)} className="text-zinc-400 hover:text-zinc-600">
+                  <button onClick={() => {
+                    const isNew = !members.some(m => m.id === editForm.id);
+                    setIsEditing(false);
+                    if (isNew) setSelectedMember(null);
+                  }} className="text-zinc-400 hover:text-zinc-600">
                     <X size={16} />
                   </button>
                 </div>
@@ -616,8 +632,12 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
                   >
                     <FloppyDisk size={14} /> Save Profile
                   </Button>
-                  <Button 
-                    onClick={() => setIsEditing(false)}
+                  <Button
+                    onClick={() => {
+                      const isNew = !members.some(m => m.id === editForm.id);
+                      setIsEditing(false);
+                      if (isNew) setSelectedMember(null);
+                    }}
                     variant="outline"
                     className="bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-650 text-xs font-semibold py-2 rounded-xl"
                   >
@@ -684,7 +704,7 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
                     <span className="text-[10px] text-zinc-400 font-bold">Live Sync</span>
                   </div>
 
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
                     {getMemberTasks(selectedMember.name).length === 0 ? (
                       <div className="p-4 bg-zinc-50/50 border border-zinc-150 rounded-2xl text-center text-[10px] text-zinc-400 font-semibold flex items-center justify-center gap-1.5">
                         <Info size={14} />
@@ -722,6 +742,24 @@ INSERT INTO catalyst_org_members (name, role, division, avatar_color, email, pho
             </div>
           </Card>
         </div>
+      </div>
+
+      <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[60] flex flex-col gap-2 pointer-events-none sm:max-w-sm">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 animate-[fadeIn_0.2s_ease-out] ${
+              t.kind === "success"
+                ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                : "bg-rose-50 text-rose-900 border-rose-200"
+            }`}
+          >
+            {t.kind === "success"
+              ? <CheckCircle size={16} weight="fill" className="shrink-0" />
+              : <WarningCircle size={16} weight="fill" className="shrink-0" />}
+            <span className="break-words">{t.text}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

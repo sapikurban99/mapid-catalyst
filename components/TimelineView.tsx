@@ -286,6 +286,25 @@ const parseDateRangeStr = (rangeStr: string): { start: Date; end: Date } | null 
   return null;
 };
 
+const ID_MONTHS_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+function buildDateRange(startIso: string, endIso: string): string {
+  if (!startIso) return "";
+  const [sy, sm, sd] = startIso.split("-").map(Number);
+  const effectiveEnd = endIso && endIso !== startIso ? endIso : null;
+  if (!effectiveEnd) return `${sd} ${ID_MONTHS_FULL[sm - 1]} ${sy}`;
+  const [ey, em, ed] = effectiveEnd.split("-").map(Number);
+  if (sm === em && sy === ey) return `${sd} – ${ed} ${ID_MONTHS_FULL[em - 1]} ${sy}`;
+  return `${sd} ${ID_MONTHS_FULL[sm - 1]} – ${ed} ${ID_MONTHS_FULL[em - 1]} ${ey}`;
+}
+
+function dateRangeToIso(dateRange: string): { start: string; end: string } {
+  const parsed = parseDateRangeStr(dateRange);
+  if (!parsed) return { start: "", end: "" };
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { start: fmt(parsed.start), end: fmt(parsed.end) };
+}
+
 const parseTaskDeadlineStr = (dateStr: string): Date | null => {
   const str = dateStr.toLowerCase().trim();
   const months = [
@@ -837,9 +856,14 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   const [editForm, setEditForm] = useState<Partial<TimelineEvent>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formEndDate, setFormEndDate] = useState("");
   
   // Track which phases have their task list collapsed/hidden
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  // Per-phase task list pagination
+  const [phaseTaskPages, setPhaseTaskPages] = useState<Record<string, number>>({});
+  const PHASE_TASK_PAGE_SIZE = 10;
 
   // Pagination for list view
   const [listPage, setListPage] = useState(1);
@@ -858,6 +882,9 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
 
   const handleEditClick = (event: TimelineEvent) => {
     setEditForm(event);
+    const { start, end } = dateRangeToIso(event.date_range);
+    setFormStartDate(start);
+    setFormEndDate(start === end ? "" : end);
     setIsEditing(true);
     setShowAddModal(true);
   };
@@ -871,16 +898,20 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       description: "",
       order_index: events.length + 1
     });
+    setFormStartDate("");
+    setFormEndDate("");
     setIsEditing(false);
     setShowAddModal(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editForm.id || !editForm.phase) return;
+    if (!editForm.id || !editForm.phase || !formStartDate) return;
+
+    const dateRange = buildDateRange(formStartDate, formEndDate);
+    const eventToSave = { ...editForm, date_range: dateRange } as TimelineEvent;
 
     setIsLoading(true);
-    const eventToSave = editForm as TimelineEvent;
     
     if (isEditing) {
       setEvents(events.map(ev => ev.id === eventToSave.id ? eventToSave : ev));
@@ -1285,9 +1316,13 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                     {/* Associated Tasks (Visual Task Gantt Chart) with show/hide toggle */}
                     {assocTasks.length > 0 && (() => {
                       // By default, non-active phases are collapsed unless explicitly toggled in collapsedPhases state
-                      const isCollapsed = collapsedPhases[event.id] !== undefined 
-                        ? collapsedPhases[event.id] 
+                      const isCollapsed = collapsedPhases[event.id] !== undefined
+                        ? collapsedPhases[event.id]
                         : !isActivePhase;
+
+                      const taskPage = phaseTaskPages[event.id] || 1;
+                      const taskTotalPages = Math.ceil(assocTasks.length / PHASE_TASK_PAGE_SIZE);
+                      const paginatedTasks = assocTasks.slice((taskPage - 1) * PHASE_TASK_PAGE_SIZE, taskPage * PHASE_TASK_PAGE_SIZE);
 
                       return (
                         <div className="mt-5 pt-4 border-t border-zinc-200 space-y-3">
@@ -1300,9 +1335,9 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                               <span className="text-[10px] text-zinc-400 font-extrabold bg-zinc-150/40 border border-zinc-200 px-2 py-0.5 rounded-lg">
                                 {completedTasks}/{totalTasks} Selesai
                               </span>
-                              <Button 
+                              <Button
                                 onClick={(e) => { e.stopPropagation(); togglePhaseTasks(event.id); }}
-                                variant="outline" 
+                                variant="outline"
                                 className="h-6 px-2.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-[9px] font-bold flex items-center gap-1 cursor-pointer"
                               >
                                 {isCollapsed ? "Tampilkan Tugas" : "Sembunyikan Tugas"}
@@ -1312,11 +1347,11 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
 
                           {!isCollapsed && (
                             <div className="space-y-3.5 bg-zinc-50/50 p-4 border border-zinc-200 rounded-2xl animate-[fadeIn_0.2s_ease-out]">
-                              {assocTasks.map(task => {
+                              {paginatedTasks.map(task => {
                                 const phaseRange = parseDateRangeStr(event.date_range);
                                 const taskDate = parseTaskDeadlineStr(task.deadline);
-                                
-                                let pct = 50; 
+
+                                let pct = 50;
                                 if (phaseRange && taskDate) {
                                   const totalRange = phaseRange.end.getTime() - phaseRange.start.getTime();
                                   const relativeTime = taskDate.getTime() - phaseRange.start.getTime();
@@ -1324,7 +1359,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                                     pct = Math.min(100, Math.max(5, (relativeTime / totalRange) * 100));
                                   }
                                 }
-                                
+
                                 let barColor = "bg-blue-500";
                                 if (task.status === "Done") barColor = "bg-emerald-500";
                                 else if (task.status === "Blocked") barColor = "bg-rose-500 animate-pulse";
@@ -1343,7 +1378,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                                         <span className="text-[10px] text-zinc-400 bg-white border border-zinc-150 px-2 py-0.5 rounded-lg font-mono">
                                           📅 Deadline: {task.deadline}
                                         </span>
-                                        <select 
+                                        <select
                                           value={task.status}
                                           onChange={(e) => handleTaskStatusChange(task.id, e.target.value as Task["status"])}
                                           className={`px-2 py-0.5 rounded font-extrabold uppercase text-[9px] tracking-wider shrink-0 border cursor-pointer appearance-none outline-none text-center ${
@@ -1378,6 +1413,28 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
                                   </div>
                                 );
                               })}
+
+                              {taskTotalPages > 1 && (
+                                <div className="flex items-center justify-between pt-3 border-t border-zinc-200 mt-1">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setPhaseTaskPages(prev => ({ ...prev, [event.id]: Math.max(1, taskPage - 1) })); }}
+                                    disabled={taskPage <= 1}
+                                    className="px-3 py-1 text-[10px] font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                                  >
+                                    ← Prev
+                                  </button>
+                                  <span className="text-[10px] font-semibold text-zinc-400">
+                                    Hal <span className="text-zinc-700 font-bold">{taskPage}</span>/{taskTotalPages} · {assocTasks.length} tugas
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setPhaseTaskPages(prev => ({ ...prev, [event.id]: Math.min(taskTotalPages, taskPage + 1) })); }}
+                                    disabled={taskPage >= taskTotalPages}
+                                    className="px-3 py-1 text-[10px] font-semibold rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                                  >
+                                    Next →
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1720,37 +1777,54 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Rentang Tanggal</label>
-                  <input 
-                    type="text" 
-                    value={editForm.date_range || ""}
-                    onChange={(e) => setEditForm({...editForm, date_range: e.target.value})}
-                    placeholder="Contoh: 1 - 15 Juni 2026" 
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white" 
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tanggal Mulai <span className="text-rose-500">*</span></label>
+                  <input
+                    type="date"
+                    value={formStartDate}
+                    onChange={(e) => setFormStartDate(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tipe Agenda</label>
-                  <select 
-                    value={editForm.type || "Registration"}
-                    onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tanggal Selesai</label>
+                  <input
+                    type="date"
+                    value={formEndDate}
+                    min={formStartDate}
+                    onChange={(e) => setFormEndDate(e.target.value)}
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white"
-                  >
-                    <option value="Registration">Registration</option>
-                    <option value="Phase Ingestion">Phase Ingestion</option>
-                    <option value="Technical Meeting">Technical Meeting</option>
-                    <option value="Field Mentoring">Field Mentoring</option>
-                    <option value="AI Implementation">AI Implementation</option>
-                    <option value="Submission">Submission</option>
-                    <option value="Announcement">Announcement</option>
-                    <option value="General Milestone">General Milestone</option>
-                    <option value="Survey Phase">Survey Phase</option>
-                    <option value="Development Phase">Development Phase</option>
-                    <option value="Judging Phase">Judging Phase</option>
-                    <option value="Main Event Ops">Main Event Ops</option>
-                  </select>
+                  />
+                  <p className="text-[10px] text-zinc-400 mt-1">Kosongkan jika satu hari</p>
                 </div>
+              </div>
+
+              {formStartDate && (
+                <p className="text-[11px] font-mono text-zinc-400 bg-zinc-50 border border-zinc-100 rounded-lg px-3 py-1.5">
+                  → {buildDateRange(formStartDate, formEndDate)}
+                </p>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tipe Agenda</label>
+                <select
+                  value={editForm.type || "Registration"}
+                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:bg-white"
+                >
+                  <option value="Registration">Registration</option>
+                  <option value="Phase Ingestion">Phase Ingestion</option>
+                  <option value="Technical Meeting">Technical Meeting</option>
+                  <option value="Field Mentoring">Field Mentoring</option>
+                  <option value="AI Implementation">AI Implementation</option>
+                  <option value="Submission">Submission</option>
+                  <option value="Announcement">Announcement</option>
+                  <option value="General Milestone">General Milestone</option>
+                  <option value="Survey Phase">Survey Phase</option>
+                  <option value="Development Phase">Development Phase</option>
+                  <option value="Judging Phase">Judging Phase</option>
+                  <option value="Main Event Ops">Main Event Ops</option>
+                </select>
               </div>
 
               <div>

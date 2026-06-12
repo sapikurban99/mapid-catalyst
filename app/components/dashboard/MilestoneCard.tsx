@@ -59,12 +59,12 @@ export function MilestoneCards({
           Registration Open
         </p>
         {editingField === "registration" ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
-              className="flex-1 text-xs font-semibold bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 min-w-0 text-xs font-semibold bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button onClick={handleSave} className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition cursor-pointer">
               <FloppyDisk size={14} />
@@ -100,12 +100,12 @@ export function MilestoneCards({
           <span className="text-xs font-bold text-zinc-400 uppercase font-mono">Hari</span>
         </div>
         {editingField === "mainEvent" ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
-              className="flex-1 text-xs font-semibold bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 min-w-0 text-xs font-semibold bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button onClick={handleSave} className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition cursor-pointer">
               <FloppyDisk size={14} />

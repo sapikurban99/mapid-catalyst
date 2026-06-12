@@ -440,9 +440,22 @@ export default function TasksPage() {
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-zinc-400 font-medium text-sm">
+                    <td colSpan={5} className="py-12 text-center">
                       <ClipboardText className="mx-auto text-zinc-300 mb-2" size={32} />
-                      Tidak ada tugas yang sesuai dengan filter.
+                      <p className="text-sm font-semibold text-zinc-500">Tidak ada tugas ditemukan.</p>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        {[
+                          search && `Pencarian "${search}"`,
+                          activeWorkstream !== "All" && `Workstream "${activeWorkstream}"`,
+                          statusFilter !== "All" && `Status "${statusFilter}"`
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+                      <button
+                        onClick={() => { setSearch(""); setActiveWorkstream("All"); setStatusFilter("All"); setPage(1); }}
+                        className="mt-3 text-xs text-indigo-600 hover:underline font-bold cursor-pointer"
+                      >
+                        Reset semua filter
+                      </button>
                     </td>
                   </tr>
                 ) : (
@@ -666,7 +679,7 @@ export default function TasksPage() {
               </div>
             )}
 
-            <div className="space-y-3 text-xs">
+            <fieldset disabled={saving} className="space-y-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-zinc-400 uppercase">Task ID</label>
@@ -806,10 +819,10 @@ export default function TasksPage() {
                   onChange={e => setForm({ ...form, notes: e.target.value })}
                   rows={2}
                   placeholder="Output / detail tambahan…"
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs text-zinc-800 focus:outline-none"
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs text-zinc-800 focus:outline-none disabled:opacity-60"
                 />
               </div>
-            </div>
+            </fieldset>
 
             <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 pt-5 mt-4 border-t border-zinc-100">
               {modalMode === "edit" ? (

@@ -9,7 +9,6 @@ import {
   TreeStructure,
   Files,
   X,
-  ClipboardText,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +35,6 @@ export default function Sidebar({
         { name: "Tasks", href: "/tasks", icon: ListChecks },
         { name: "Organization", href: "/org-structure", icon: TreeStructure },
         { name: "Documents", href: "/documents", icon: Files },
-        { name: "Meeting Notes", href: "/meeting-notes", icon: ClipboardText },
       ],
     },
   ];

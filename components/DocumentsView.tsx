@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { 
-  Files, 
-  Link as LinkIcon, 
+import { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  Files,
+  Link as LinkIcon,
   Info,
   MagnifyingGlass,
   ArrowSquareOut,
@@ -11,7 +11,9 @@ import {
   PencilSimple,
   FloppyDisk,
   X,
-  Trash
+  Trash,
+  CheckCircle,
+  WarningCircle
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,6 +37,13 @@ export default function DocumentsView({ initialDocuments }: { initialDocuments: 
   const [localDocs, setLocalDocs] = useState<Document[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Document>>({});
+  const [toasts, setToasts] = useState<{ id: number; kind: "success" | "error"; text: string }[]>([]);
+
+  const pushToast = useCallback((kind: "success" | "error", text: string) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, kind, text }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
 
   // Parse items from Supabase, default to empty array as requested
   const mappedDocs = useMemo(() => {
@@ -106,8 +115,10 @@ export default function DocumentsView({ initialDocuments }: { initialDocuments: 
           due_date: docToSave.due_date,
           last_updated: docToSave.last_updated
         });
+      pushToast("success", `"${docToSave.name}" berhasil disimpan.`);
     } catch (e) {
       console.error("Error saving document to Supabase:", e);
+      pushToast("error", "Gagal menyimpan dokumen ke Supabase.");
     }
   };
 
@@ -139,8 +150,10 @@ export default function DocumentsView({ initialDocuments }: { initialDocuments: 
         .from("catalyst_documents")
         .delete()
         .eq("id", id);
+      pushToast("success", "Dokumen berhasil dihapus.");
     } catch (e) {
       console.error("Error deleting document from Supabase:", e);
+      pushToast("error", "Gagal menghapus dokumen.");
     }
   };
 
@@ -358,6 +371,24 @@ export default function DocumentsView({ initialDocuments }: { initialDocuments: 
             </div>
           </Card>
         </div>
+      </div>
+
+      <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[60] flex flex-col gap-2 pointer-events-none sm:max-w-sm">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2 animate-[fadeIn_0.2s_ease-out] ${
+              t.kind === "success"
+                ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                : "bg-rose-50 text-rose-900 border-rose-200"
+            }`}
+          >
+            {t.kind === "success"
+              ? <CheckCircle size={16} weight="fill" className="shrink-0" />
+              : <WarningCircle size={16} weight="fill" className="shrink-0" />}
+            <span className="break-words">{t.text}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
