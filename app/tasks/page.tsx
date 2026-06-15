@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 
 type TaskStatus = "Not Started" | "In Progress" | "Waiting Review" | "Blocked" | "Done" | "Delayed";
@@ -322,20 +323,20 @@ export default function TasksPage() {
 
   const statusStyle = (s: TaskStatus) => {
     switch (s) {
-      case "Done": return "bg-emerald-100 text-emerald-800 border-emerald-200";
-      case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Waiting Review": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "Blocked": return "bg-rose-100 text-rose-800 border-rose-200 ring-2 ring-rose-50";
-      case "Delayed": return "bg-amber-100 text-amber-800 border-amber-200";
-      default: return "bg-zinc-100 text-zinc-600 border-zinc-200";
+      case "Done": return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "In Progress": return "bg-blue-50 text-blue-700 border-blue-100";
+      case "Waiting Review": return "bg-purple-50 text-purple-700 border-purple-100";
+      case "Blocked": return "bg-rose-50 text-rose-700 border-rose-100 ring-2 ring-rose-50";
+      case "Delayed": return "bg-orange-50 text-orange-700 border-orange-100";
+      default: return "bg-zinc-100 text-zinc-650 border-zinc-200";
     }
   };
 
   const priorityStyle = (p: TaskPriority) => {
     switch (p) {
-      case "High": return "bg-rose-50 text-rose-700 border-rose-100 font-bold";
-      case "Medium": return "bg-amber-50 text-amber-700 border-amber-100";
-      default: return "bg-zinc-50 text-zinc-500 border-zinc-100";
+      case "High": return "bg-rose-50 text-rose-700 border-rose-100 font-extrabold";
+      case "Medium": return "bg-amber-50 text-amber-700 border-amber-100 font-bold";
+      default: return "bg-zinc-50 text-zinc-500 border-zinc-100 font-bold";
     }
   };
 
@@ -434,8 +435,8 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="lg:col-span-2 bg-white border border-zinc-200 rounded-2xl p-3 sm:p-5 shadow-sm overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+        <Card className="bg-white border border-zinc-200 rounded-2xl p-3 sm:p-5 shadow-sm overflow-hidden">
           <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
             <table className="w-full text-left text-sm">
               <thead>
@@ -541,345 +542,425 @@ export default function TasksPage() {
             </div>
           )}
         </Card>
+      </div>
 
-        <div className="lg:col-span-1">
-          <Card className="bg-white border border-zinc-200 rounded-3xl p-4 sm:p-6 shadow-sm min-h-[400px] flex flex-col justify-between">
-            {selected === null ? (
-              <div className="my-auto text-center text-zinc-400 space-y-2 py-12">
-                <ClipboardText size={48} className="mx-auto text-zinc-200" />
-                <p className="text-xs font-semibold">Pilih tugas pada tabel sebelah kiri untuk meninjau rincian project management.</p>
+      {selected && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-all duration-300"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="fixed top-0 right-0 h-full w-full max-w-lg bg-white border-l border-zinc-200 shadow-2xl animate-[slideInRight_0.25s_ease-out] overflow-y-auto flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header Section */}
+            <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 p-5 sm:p-6 border-b border-zinc-100 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-bold uppercase tracking-wider px-2 rounded-lg">
+                    {selected.workstream}
+                  </Badge>
+                  <span className="text-[10px] font-mono font-bold text-zinc-400 tracking-tighter">{selected.id}</span>
+                </div>
+                <h3 className="font-bold text-zinc-950 text-lg leading-tight mt-1">{selected.name}</h3>
               </div>
-            ) : (
-              <div className="space-y-5">
-                <div className="border-b border-zinc-100 pb-3 flex justify-between items-start gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                        {selected.workstream}
-                      </span>
-                      <span className="text-[10px] font-mono font-bold text-zinc-400">{selected.id}</span>
-                    </div>
-                    <h3 className="font-bold text-zinc-950 text-base mt-2 leading-tight">{selected.name}</h3>
-                  </div>
-                  <button
-                    onClick={() => openEditModal(selected)}
-                    className="p-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-950 transition cursor-pointer"
-                  >
-                    <PencilSimple size={14} />
-                  </button>
-                </div>
+              <button onClick={() => setSelected(null)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 hover:text-zinc-600 transition cursor-pointer self-start mt-1">
+                <X size={20} />
+              </button>
+            </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs font-medium border-b border-zinc-100 pb-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">PIC</p>
-                    <p className="text-zinc-800 flex items-center gap-1.5 font-bold">
-                      <User size={14} className="text-zinc-400" /> {selected.pic}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Deadline</p>
-                    <p className="text-zinc-800 flex items-center gap-1.5 font-mono">
-                      <CalendarBlank size={14} className="text-zinc-400" /> {selected.deadline}
-                    </p>
-                  </div>
+            <div className="p-5 sm:p-6 space-y-6 flex-1">
+              {/* Primary Info Cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-zinc-50/50 border border-zinc-100 rounded-2xl p-3.5 space-y-1.5 transition-all hover:border-zinc-200">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <User size={12} weight="bold" /> PIC
+                  </p>
+                  <p className="text-zinc-900 font-bold text-sm">
+                    {selected.pic}
+                  </p>
                 </div>
+                <div className="bg-zinc-50/50 border border-zinc-100 rounded-2xl p-3.5 space-y-1.5 transition-all hover:border-zinc-200">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <CalendarBlank size={12} weight="bold" /> Deadline
+                  </p>
+                  <p className="text-zinc-900 font-bold text-sm font-mono">
+                    {selected.deadline}
+                  </p>
+                </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs font-medium border-b border-zinc-100 pb-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Prioritas</p>
-                    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded border ${priorityStyle(selected.priority)}`}>
-                      {selected.priority}
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Status</p>
-                    <select
-                      value={selected.status}
-                      onChange={e => handleQuickStatus(selected.id, e.target.value as TaskStatus)}
-                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border tracking-wider cursor-pointer outline-none ${statusStyle(selected.status)}`}
-                    >
-                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+              {/* Status & Priority Selection */}
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Update Status</label>
+                  <div className="flex flex-wrap gap-2">
+                    {STATUSES.map(s => (
+                      <button
+                        key={s}
+                        onClick={() => handleQuickStatus(selected.id, s)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wide border transition-all cursor-pointer ${
+                          selected.status === s
+                            ? statusStyle(s)
+                            : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-200 hover:text-zinc-600"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Prioritas</label>
+                  <div className="flex gap-2">
+                    {PRIORITIES.map(p => (
+                      <Badge
+                        key={p}
+                        variant="outline"
+                        className={`${selected.priority === p ? priorityStyle(p) : "bg-white text-zinc-400 border-zinc-100"} px-3 py-1 rounded-lg text-[10px] font-bold uppercase border-2`}
+                      >
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Context Sections */}
+              <div className="space-y-5 pt-2">
                 {selected.phase_id && (
-                  <div className="text-xs space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Phase Terhubung</p>
-                    <p className="text-zinc-700 bg-indigo-50/60 border border-indigo-100 rounded-xl p-2 font-medium">
-                      🎯 {phaseOptions.find(p => p.id === selected.phase_id)?.label || selected.phase_id}
-                    </p>
-                  </div>
-                )}
-
-                {selected.start_date && (
-                  <div className="text-xs space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Mulai</p>
-                    <p className="text-zinc-700 font-mono">{selected.start_date}</p>
-                  </div>
-                )}
-
-                {selected.dependency && (
-                  <div className="text-xs space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Dependency</p>
-                    <p className="text-zinc-700 bg-zinc-50 border border-zinc-100 rounded-xl p-2 font-medium">🔗 {selected.dependency}</p>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Phase Terhubung</label>
+                    <div className="bg-indigo-50/40 border border-indigo-100/50 rounded-2xl p-3.5 flex items-start gap-3">
+                      <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600 shrink-0">
+                        <Info size={16} weight="fill" />
+                      </div>
+                      <div>
+                        <p className="text-zinc-900 font-bold text-xs">
+                          {phaseOptions.find(p => p.id === selected.phase_id)?.label || selected.phase_id}
+                        </p>
+                        <p className="text-[10px] text-zinc-500 font-medium mt-0.5">Task ini tersinkronisasi dengan timeline project.</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {selected.blocker && (
-                  <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-2xl space-y-1 text-xs">
-                    <p className="font-bold text-rose-800 flex items-center gap-1.5">
-                      <WarningCircle size={16} weight="fill" /> Blocker
-                    </p>
-                    <p className="text-rose-700/90 font-medium leading-tight mt-1">{selected.blocker}</p>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Blocker Details</label>
+                    <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-start gap-3 animate-pulse">
+                      <div className="bg-rose-100 p-2 rounded-xl text-rose-600 shrink-0">
+                        <WarningCircle size={18} weight="fill" />
+                      </div>
+                      <p className="text-rose-800 font-bold text-xs leading-relaxed italic">
+                        "{selected.blocker}"
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {selected.notes && (
-                  <div className="text-xs space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase">Catatan</p>
-                    <p className="text-zinc-700 bg-zinc-50/50 p-2.5 rounded-xl border border-zinc-100 leading-relaxed font-medium">
-                      📝 {selected.notes}
-                    </p>
+                {(selected.notes || selected.dependency || selected.start_date) && (
+                  <div className="space-y-4 pt-2 border-t border-zinc-100">
+                    {selected.start_date && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-400 font-bold uppercase text-[9px] tracking-widest">Tanggal Mulai</span>
+                        <span className="text-zinc-700 font-mono font-bold">{selected.start_date}</span>
+                      </div>
+                    )}
+                    {selected.dependency && (
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Dependency</label>
+                        <div className="text-zinc-700 bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs font-semibold flex items-center gap-2">
+                           <LinkIcon size={14} className="text-zinc-400" /> {selected.dependency}
+                        </div>
+                      </div>
+                    )}
+                    {selected.notes && (
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Catatan Tambahan</label>
+                        <div className="text-zinc-700 bg-zinc-50/50 border border-zinc-100 rounded-2xl p-4 text-xs font-medium leading-relaxed italic">
+                           {selected.notes}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-
-                <div className="pt-2 flex gap-2">
-                  {selected.doc_link && (
-                    <a
-                      href={selected.doc_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 bg-zinc-100 hover:bg-zinc-200/80 text-zinc-800 text-xs font-bold py-2.5 px-4 rounded-xl border border-zinc-200 transition cursor-pointer"
-                    >
-                      <LinkIcon size={14} /> Buka Tautan
-                    </a>
-                  )}
-                  <button
-                    onClick={() => openEditModal(selected)}
-                    className="px-3.5 bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 hover:text-zinc-950 border border-zinc-200 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                  >
-                    <PencilSimple size={14} /> Edit
-                  </button>
-                </div>
               </div>
-            )}
-
-            <div className="mt-6 pt-4 border-t border-zinc-100 text-[11px] text-zinc-400 font-semibold flex items-center gap-2">
-              <Info size={14} className="text-indigo-500" />
-              <span>Status bisa diubah langsung dari dropdown di panel ini.</span>
             </div>
-          </Card>
+
+            {/* Footer Actions */}
+            <div className="sticky bottom-0 bg-zinc-50 p-5 sm:p-6 border-t border-zinc-200 flex flex-col sm:flex-row gap-3">
+              {selected.doc_link && (
+                <a
+                  href={selected.doc_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-[2] flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold py-3 px-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-95 cursor-pointer"
+                >
+                  <LinkIcon size={16} weight="bold" /> Buka Dokumen Utama
+                </a>
+              )}
+              <button
+                onClick={() => openEditModal(selected)}
+                className="flex-1 bg-white hover:bg-zinc-100 text-zinc-950 border border-zinc-200 rounded-2xl text-xs font-extrabold transition-all py-3 flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
+              >
+                <PencilSimple size={16} weight="bold" /> Edit Detail
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {modalOpen && form && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300"
           onClick={closeModal}
         >
           <Card
-            className="w-full max-w-2xl bg-white border border-zinc-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl animate-[fadeIn_0.2s_ease-out] max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-3xl bg-white border border-zinc-200 rounded-3xl shadow-2xl animate-[fadeIn_0.2s_ease-out] max-h-[92vh] flex flex-col overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
-              <h3 className="font-bold text-base text-zinc-900 flex items-center gap-2">
-                {modalMode === "create" ? <Plus size={18} /> : <PencilSimple size={18} />}
-                {modalMode === "create" ? "Tambah Task Baru" : `Edit ${form.id}`}
-              </h3>
-              <button onClick={closeModal} className="text-zinc-400 hover:text-zinc-600 cursor-pointer" disabled={saving}>
-                <X size={18} />
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/30">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${modalMode === "create" ? "bg-indigo-100 text-indigo-600" : "bg-amber-100 text-amber-600"}`}>
+                  {modalMode === "create" ? <Plus size={20} weight="bold" /> : <PencilSimple size={20} weight="bold" />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-zinc-900 leading-none">
+                    {modalMode === "create" ? "Tambah Task Baru" : "Update Detail Task"}
+                  </h3>
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">
+                    {modalMode === "create" ? "Silahkan lengkapi data task di bawah" : `Task ID: ${form.id}`}
+                  </p>
+                </div>
+              </div>
+              <button onClick={closeModal} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 hover:text-zinc-600 transition cursor-pointer" disabled={saving}>
+                <X size={20} />
               </button>
             </div>
 
-            {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
-                <WarningCircle size={16} weight="fill" className="shrink-0 mt-0.5" />
-                <p>{formError}</p>
-              </div>
-            )}
-
-            <fieldset disabled={saving} className="space-y-3 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Task ID</label>
-                  <Input
-                    value={form.id}
-                    onChange={e => setForm({ ...form, id: e.target.value.toUpperCase() })}
-                    disabled={modalMode === "edit"}
-                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs font-mono"
-                  />
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-8 custom-scrollbar">
+              {formError && (
+                <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-800 text-xs flex items-start gap-3 animate-shake">
+                  <WarningCircle size={18} weight="fill" className="shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Periksa Kembali Input Anda</p>
+                    <p className="opacity-80 mt-0.5">{formError}</p>
+                  </div>
                 </div>
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Nama Tugas <span className="text-rose-500">*</span></label>
-                  <Input
-                    value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
-                    placeholder="Contoh: Finalize sponsor proposal"
-                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs"
-                  />
-                </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Workstream <span className="text-rose-500">*</span></label>
-                  <select
-                    value={form.workstream}
-                    onChange={e => setForm({ ...form, workstream: e.target.value })}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-semibold focus:outline-none cursor-pointer"
+              <fieldset disabled={saving} className="space-y-8">
+                {/* Section 1: Basic Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1 w-8 bg-indigo-500 rounded-full" />
+                    <h4 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-[0.2em]">Informasi Dasar</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="sm:col-span-3 space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Task ID</label>
+                      <Input
+                        value={form.id}
+                        onChange={e => setForm({ ...form, id: e.target.value.toUpperCase() })}
+                        disabled={modalMode === "edit"}
+                        className="bg-zinc-50 border-zinc-200 rounded-xl py-2.5 px-3 text-xs font-mono font-bold focus:ring-zinc-950"
+                      />
+                    </div>
+                    <div className="sm:col-span-9 space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Nama Tugas <span className="text-rose-500">*</span></label>
+                      <Input
+                        value={form.name}
+                        onChange={e => setForm({ ...form, name: e.target.value })}
+                        placeholder="Misal: Finalisasi proposal sponsorship"
+                        className="bg-zinc-50 border-zinc-200 rounded-xl py-2.5 px-4 text-xs font-semibold focus:ring-zinc-950"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Workstream <span className="text-rose-500">*</span></label>
+                      <select
+                        value={form.workstream}
+                        onChange={e => setForm({ ...form, workstream: e.target.value })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs font-bold text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 transition-all cursor-pointer"
+                      >
+                        {WORKSTREAMS.map(w => <option key={w} value={w}>{w}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Penanggung Jawab (PIC) <span className="text-rose-500">*</span></label>
+                      <div className="relative">
+                        <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <Input
+                          value={form.pic}
+                          onChange={e => setForm({ ...form, pic: e.target.value })}
+                          placeholder="Nama PIC atau Jabatan"
+                          className="bg-zinc-50 border-zinc-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-semibold focus:ring-zinc-950"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Planning & Timeline */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1 w-8 bg-emerald-500 rounded-full" />
+                    <h4 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-[0.2em]">Perencanaan & Waktu</h4>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Hubungkan ke Phase</label>
+                    <select
+                      value={form.phase_id || ""}
+                      onChange={e => setForm({ ...form, phase_id: e.target.value })}
+                      className="w-full bg-white border border-zinc-200 rounded-xl p-2.5 text-xs font-bold text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                    >
+                      <option value="">— Tidak dihubungkan ke phase manapun —</option>
+                      {phaseOptions.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={indoDateToIso(form.start_date)}
+                        onChange={e => setForm({ ...form, start_date: e.target.value ? isoToIndoDate(e.target.value) : "" })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-zinc-950 cursor-pointer transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Deadline <span className="text-rose-500">*</span></label>
+                      <input
+                        type="date"
+                        value={indoDateToIso(form.deadline)}
+                        onChange={e => setForm({ ...form, deadline: e.target.value ? isoToIndoDate(e.target.value) : "" })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-zinc-950 cursor-pointer transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Tingkat Prioritas</label>
+                      <select
+                        value={form.priority}
+                        onChange={e => setForm({ ...form, priority: e.target.value as TaskPriority })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs font-bold text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 transition-all cursor-pointer"
+                      >
+                        {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Context & Links */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-1 w-8 bg-amber-500 rounded-full" />
+                    <h4 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-[0.2em]">Konteks & Tautan</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Status Progres</label>
+                      <select
+                        value={form.status}
+                        onChange={e => setForm({ ...form, status: e.target.value as TaskStatus })}
+                        className={`w-full border rounded-xl p-2.5 text-xs font-extrabold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-zinc-950 transition-all cursor-pointer ${statusStyle(form.status)}`}
+                      >
+                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Dependency (Tugas Prasyarat)</label>
+                      <div className="relative">
+                        <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <Input
+                          value={form.dependency || ""}
+                          onChange={e => setForm({ ...form, dependency: e.target.value })}
+                          placeholder="ID atau Nama Task lain"
+                          className="bg-zinc-50 border-zinc-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-semibold focus:ring-zinc-950"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Tautan Dokumen Pendukung</label>
+                      <Input
+                        type="url"
+                        value={form.doc_link || ""}
+                        onChange={e => setForm({ ...form, doc_link: e.target.value })}
+                        placeholder="https://docs.google.com/..."
+                        className="bg-zinc-50 border-zinc-200 rounded-xl py-2.5 px-4 text-xs font-medium focus:ring-zinc-950"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1 text-rose-500">Blocker / Kendala</label>
+                      <Input
+                        value={form.blocker || ""}
+                        onChange={e => setForm({ ...form, blocker: e.target.value })}
+                        placeholder="Tuliskan kendala jika ada"
+                        className="bg-rose-50/50 border-rose-100 rounded-xl py-2.5 px-4 text-xs font-medium focus:ring-rose-500 placeholder:text-rose-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Catatan Tambahan</label>
+                    <textarea
+                      value={form.notes || ""}
+                      onChange={e => setForm({ ...form, notes: e.target.value })}
+                      rows={3}
+                      placeholder="Detail output, instruksi tambahan, atau memo..."
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-xs text-zinc-800 font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950 transition-all disabled:opacity-60 placeholder:text-zinc-400"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-5 sm:p-6 border-t border-zinc-100 bg-zinc-50/50 flex flex-col-reverse sm:flex-row sm:justify-between gap-3">
+              <div className="flex gap-2">
+                {modalMode === "edit" && (
+                  <Button
+                    type="button"
+                    onClick={() => handleDelete(form.id)}
+                    variant="ghost"
+                    disabled={saving}
+                    className="flex-1 sm:flex-none text-rose-500 hover:bg-rose-50 hover:text-rose-600 px-5 rounded-2xl text-xs font-extrabold cursor-pointer h-11 transition-all"
                   >
-                    {WORKSTREAMS.map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">PIC <span className="text-rose-500">*</span></label>
-                  <Input
-                    value={form.pic}
-                    onChange={e => setForm({ ...form, pic: e.target.value })}
-                    placeholder="Hadi / Lead"
-                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase">Phase Terhubung (opsional)</label>
-                <select
-                  value={form.phase_id || ""}
-                  onChange={e => setForm({ ...form, phase_id: e.target.value })}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-semibold focus:outline-none cursor-pointer"
-                >
-                  <option value="">— Tidak dihubungkan ke phase manapun —</option>
-                  {phaseOptions.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                </select>
-                <p className="text-[10px] text-zinc-400 font-medium">Pilih phase agar task tampil di Timeline, Calendar, dan Gantt view.</p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Start Date</label>
-                  <input
-                    type="date"
-                    value={indoDateToIso(form.start_date)}
-                    onChange={e => setForm({ ...form, start_date: e.target.value ? isoToIndoDate(e.target.value) : "" })}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-mono focus:outline-none cursor-pointer"
-                  />
-                  {form.start_date && <p className="text-[10px] text-zinc-400 font-mono">→ {form.start_date}</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Deadline <span className="text-rose-500">*</span></label>
-                  <input
-                    type="date"
-                    value={indoDateToIso(form.deadline)}
-                    onChange={e => setForm({ ...form, deadline: e.target.value ? isoToIndoDate(e.target.value) : "" })}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-mono focus:outline-none cursor-pointer"
-                  />
-                  {form.deadline && <p className="text-[10px] text-zinc-400 font-mono">→ {form.deadline}</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Priority</label>
-                  <select
-                    value={form.priority}
-                    onChange={e => setForm({ ...form, priority: e.target.value as TaskPriority })}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-semibold focus:outline-none cursor-pointer"
-                  >
-                    {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={e => setForm({ ...form, status: e.target.value as TaskStatus })}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-semibold focus:outline-none cursor-pointer"
-                  >
-                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase">Dependency</label>
-                  <Input
-                    value={form.dependency || ""}
-                    onChange={e => setForm({ ...form, dependency: e.target.value })}
-                    placeholder="Misal: Draft timeline"
-                    className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase">Tautan Dokumen</label>
-                <Input
-                  type="url"
-                  value={form.doc_link || ""}
-                  onChange={e => setForm({ ...form, doc_link: e.target.value })}
-                  placeholder="https://docs.google.com/…"
-                  className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase">Blocker</label>
-                <Input
-                  value={form.blocker || ""}
-                  onChange={e => setForm({ ...form, blocker: e.target.value })}
-                  placeholder="Masalah yang menghambat task ini…"
-                  className="bg-zinc-50 border-zinc-200 rounded-xl py-2 px-3 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase">Catatan</label>
-                <textarea
-                  value={form.notes || ""}
-                  onChange={e => setForm({ ...form, notes: e.target.value })}
-                  rows={2}
-                  placeholder="Output / detail tambahan…"
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2.5 text-xs text-zinc-800 focus:outline-none disabled:opacity-60"
-                />
-              </div>
-            </fieldset>
-
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 pt-5 mt-4 border-t border-zinc-100">
-              {modalMode === "edit" ? (
-                <Button
-                  type="button"
-                  onClick={() => handleDelete(form.id)}
-                  variant="ghost"
-                  disabled={saving}
-                  className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer self-start sm:self-auto"
-                >
-                  <TrashSimple size={14} className="mr-1" /> Hapus
-                </Button>
-              ) : <div className="hidden sm:block" />}
-              <div className="flex gap-2 w-full sm:w-auto">
+                    <TrashSimple size={16} className="mr-2" /> Hapus Task
+                  </Button>
+                )}
                 <Button
                   onClick={closeModal}
                   variant="outline"
                   disabled={saving}
-                  className="flex-1 sm:flex-none bg-white border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold py-2 px-4 rounded-xl cursor-pointer"
+                  className="flex-1 sm:flex-none bg-white border-zinc-200 hover:bg-zinc-100 text-zinc-650 text-xs font-bold px-6 rounded-2xl cursor-pointer h-11"
                 >
                   Batal
                 </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 sm:flex-none bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer min-w-[110px]"
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Menyimpan…
-                    </>
-                  ) : (
-                    <><FloppyDisk size={14} /> Save Task</>
-                  )}
-                </Button>
               </div>
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-extrabold px-8 rounded-2xl flex items-center justify-center gap-2 cursor-pointer h-11 shadow-lg shadow-zinc-200 min-w-[140px] transition-all active:scale-95"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menyimpan…
+                  </>
+                ) : (
+                  <><FloppyDisk size={16} weight="bold" /> Simpan Perubahan</>
+                )}
+              </Button>
             </div>
           </Card>
         </div>
