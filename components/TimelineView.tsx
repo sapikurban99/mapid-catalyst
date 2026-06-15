@@ -890,8 +890,15 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   };
 
   const handleAddNewClick = () => {
+    // Generate next P0XX id based on existing max
+    const maxNum = events.reduce((max, ev) => {
+      const match = ev.id.match(/^P(\d+)$/);
+      return match ? Math.max(max, parseInt(match[1], 10)) : max;
+    }, 0);
+    const nextId = `P${String(maxNum + 1).padStart(3, "0")}`;
+
     setEditForm({
-      id: crypto.randomUUID(),
+      id: nextId,
       phase: "",
       date_range: "",
       type: "Registration",
@@ -916,7 +923,22 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
     if (isEditing) {
       setEvents(events.map(ev => ev.id === eventToSave.id ? eventToSave : ev));
     } else {
-      setEvents([...events, eventToSave]);
+      const updatedEvents = [...events, eventToSave];
+      // Sort by date range so new event appears in correct position
+      updatedEvents.sort((a, b) => {
+        const aRange = parseDateRangeStr(a.date_range);
+        const bRange = parseDateRangeStr(b.date_range);
+        if (!aRange && !bRange) return 0;
+        if (!aRange) return 1;
+        if (!bRange) return -1;
+        return aRange.start.getTime() - bRange.start.getTime();
+      });
+      // Re-assign order_index based on sorted position
+      updatedEvents.forEach((ev, i) => { ev.order_index = i; });
+      // Sync eventToSave with its sorted position for the upsert below
+      const savedEvent = updatedEvents.find(ev => ev.id === eventToSave.id);
+      if (savedEvent) eventToSave.order_index = savedEvent.order_index;
+      setEvents(updatedEvents);
     }
     
     setShowAddModal(false);
@@ -964,6 +986,18 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       setIsLoading(false);
     }
   };
+
+  // Derive events sorted by date range
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => {
+      const aRange = parseDateRangeStr(a.date_range);
+      const bRange = parseDateRangeStr(b.date_range);
+      if (!aRange && !bRange) return 0;
+      if (!aRange) return 1;
+      if (!bRange) return -1;
+      return aRange.start.getTime() - bRange.start.getTime();
+    });
+  }, [events]);
 
   // Compute currently active or next upcoming phase dynamically based on today's actual date
   const activeEventId = useMemo(() => {
@@ -1130,8 +1164,8 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
   // Get events for the currently selected day
   const selectedDayEvents = useMemo(() => {
     if (selectedDay === null) return [];
-    return events.filter(event => isEventOnDay(event, selectedDay, currentMonthIndex, currentYear));
-  }, [selectedDay, currentMonthIndex, currentYear, events]);
+    return sortedEvents.filter(event => isEventOnDay(event, selectedDay, currentMonthIndex, currentYear));
+  }, [selectedDay, currentMonthIndex, currentYear, sortedEvents]);
 
   return (
     <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
@@ -1179,7 +1213,7 @@ export default function TimelineView({ initialEvents, initialTasks = [] }: { ini
       {activeTab === "list" && (() => {
         const listTotalPages = Math.max(1, Math.ceil(events.length / LIST_PAGE_SIZE));
         const listSafePage = Math.min(listPage, listTotalPages);
-        const paginatedEvents = events.slice((listSafePage - 1) * LIST_PAGE_SIZE, listSafePage * LIST_PAGE_SIZE);
+        const paginatedEvents = sortedEvents.slice((listSafePage - 1) * LIST_PAGE_SIZE, listSafePage * LIST_PAGE_SIZE);
 
         return (
         <Card className="bg-white border border-zinc-200 rounded-3xl p-6 md:p-8 shadow-sm">

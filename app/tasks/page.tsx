@@ -83,29 +83,7 @@ function nextTaskId(existing: Task[]): string {
   return `T${String(next).padStart(3, "0")}`;
 }
 
-const PHASE_OPTIONS: { id: string; label: string }[] = [
-  { id: "P001", label: "P001 — Planning & Persiapan Kompetisi (Mei 2026)" },
-  { id: "P002", label: "P002 — Pembukaan Pendaftaran (8-26 Jun 2026)" },
-  { id: "P003", label: "P003 — Seleksi Proposal & Kurasi (27 Jun-3 Jul)" },
-  { id: "P004", label: "P004 — Pengumuman 50 Tim (4 Jul 2026)" },
-  { id: "P005", label: "P005 — Technical Meeting (6 Jul 2026)" },
-  { id: "P006", label: "P006 — Mentoring 1 (8 Jul 2026)" },
-  { id: "P007", label: "P007 — Mentoring 2 Data Vis (15 Jul 2026)" },
-  { id: "P008", label: "P008 — Mentoring 3 PRD (22 Jul 2026)" },
-  { id: "P009", label: "P009 — Survey Activities (9-27 Jul 2026)" },
-  { id: "P010", label: "P010 — Mentoring 4 GEO MAPID (29 Jul 2026)" },
-  { id: "P011", label: "P011 — Development WebGIS (4 Jul-11 Sep)" },
-  { id: "P012", label: "P012 — 1on1 Sessions (4 Jul-11 Sep)" },
-  { id: "P013", label: "P013 — Mentoring 5 Product Review (19 Agu)" },
-  { id: "P014", label: "P014 — Pengumpulan Final (11 Sep 2026)" },
-  { id: "P015", label: "P015 — Seleksi Grand Final (14-18 Sep)" },
-  { id: "P016", label: "P016 — Pengumuman Top 10 (19 Sep 2026)" },
-  { id: "P017", label: "P017 — Mentoring 6 Public Speaking (21-22 Sep)" },
-  { id: "P018", label: "P018 — Final Preparation & Rehearsal (21-23 Sep)" },
-  { id: "P019", label: "P019 — Catalyst Day 1 (24 Sep 2026)" },
-  { id: "P020", label: "P020 — Catalyst Day 2 (25 Sep 2026)" },
-  { id: "P021", label: "P021 — Post-Event Publication (28 Sep-5 Okt)" }
-];
+type PhaseOption = { id: string; label: string };
 
 const emptyForm = (existing: Task[], defaultWs: string): Task => ({
   id: nextTaskId(existing),
@@ -122,6 +100,27 @@ const emptyForm = (existing: Task[], defaultWs: string): Task => ({
   notes: "",
   phase_id: ""
 });
+
+function parseDateRangeStart(rangeStr: string): number | null {
+  const str = rangeStr.toLowerCase().replace(/\s+/g, ' ');
+  const months = ["januari","februari","maret","april","mei","juni","juli","agustus","september","oktober","november","desember"];
+  const numbers = str.match(/\d+/g);
+  const monthsFound = months
+    .map((m, idx) => ({ index: idx, pos: str.indexOf(m) }))
+    .filter(m => m.pos !== -1)
+    .sort((a, b) => a.pos - b.pos);
+  if (!numbers || monthsFound.length === 0) return null;
+  const year = parseInt(str.match(/\b(202\d)\b/)?.[1] || "2026", 10);
+  // Single date: "7 Agustus 2026"
+  if (monthsFound.length === 1 && numbers.length >= 1) {
+    return new Date(year, monthsFound[0].index, parseInt(numbers[0], 10)).getTime();
+  }
+  // Range with two months: "28 Juli – 4 Agustus 2026"
+  if (monthsFound.length >= 2 && numbers.length >= 2) {
+    return new Date(year, monthsFound[0].index, parseInt(numbers[0], 10)).getTime();
+  }
+  return null;
+}
 
 function sanitize(t: Task): Task {
   return {
@@ -155,6 +154,7 @@ export default function TasksPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [phaseOptions, setPhaseOptions] = useState<PhaseOption[]>([]);
 
   const pushToast = useCallback((kind: Toast["kind"], text: string) => {
     const id = Date.now() + Math.random();
@@ -178,6 +178,26 @@ export default function TasksPage() {
         setTasks((data || []) as Task[]);
       }
       setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("catalyst_timeline")
+        .select("id, phase, date_range");
+      if (cancelled) return;
+      if (!error && data) {
+        const raw = data as { id: string; phase: string; date_range: string }[];
+        const withSort = raw
+          .map(e => ({ ...e, sortKey: parseDateRangeStart(e.date_range) }))
+          .filter(e => e.sortKey !== null)
+          .sort((a, b) => a.sortKey! - b.sortKey!)
+          .map(e => ({ id: e.id, label: `${e.id} — ${e.phase} (${e.date_range})` }));
+        setPhaseOptions(withSort);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -587,7 +607,7 @@ export default function TasksPage() {
                   <div className="text-xs space-y-1">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase">Phase Terhubung</p>
                     <p className="text-zinc-700 bg-indigo-50/60 border border-indigo-100 rounded-xl p-2 font-medium">
-                      🎯 {PHASE_OPTIONS.find(p => p.id === selected.phase_id)?.label || selected.phase_id}
+                      🎯 {phaseOptions.find(p => p.id === selected.phase_id)?.label || selected.phase_id}
                     </p>
                   </div>
                 )}
@@ -731,7 +751,7 @@ export default function TasksPage() {
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs font-semibold focus:outline-none cursor-pointer"
                 >
                   <option value="">— Tidak dihubungkan ke phase manapun —</option>
-                  {PHASE_OPTIONS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  {phaseOptions.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                 </select>
                 <p className="text-[10px] text-zinc-400 font-medium">Pilih phase agar task tampil di Timeline, Calendar, dan Gantt view.</p>
               </div>
