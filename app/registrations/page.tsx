@@ -79,7 +79,7 @@ export default function RegistrationsPage() {
             Detail Pendaftar
           </h1>
           <p className="text-sm text-zinc-500 mt-0.5 font-medium">
-            Daftar tim yang sudah terdaftar di MAPID Catalyst 2026.
+            Daftar tim yang sudah terdaftar di MAPID WebGIS Competition 2026.
           </p>
         </div>
         <div className="text-xs text-zinc-500 font-semibold bg-white border border-zinc-200 px-4 py-2.5 rounded-2xl shadow-sm self-start shrink-0">
