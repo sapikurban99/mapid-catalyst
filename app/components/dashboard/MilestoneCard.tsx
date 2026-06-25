@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   registrationCount: number;
+  registrationCloseDate: string;
   mainEventDate: string;
   daysToMainEvent: number;
   onSave: (field: "mainEvent", value: string) => void;
@@ -14,6 +15,7 @@ interface Props {
 
 export function MilestoneCards({
   registrationCount,
+  registrationCloseDate,
   mainEventDate,
   daysToMainEvent,
   onSave,
@@ -72,6 +74,9 @@ export function MilestoneCards({
           ) : (
             <>Kurang <span className="text-indigo-600 font-bold">{targetTim - registrationCount}</span> tim lagi</>
           )}
+        </p>
+        <p className="text-[10px] font-semibold text-zinc-300 border-t border-zinc-100 pt-2">
+          📅 Tutup registrasi: {formatDate(registrationCloseDate)}
         </p>
       </Card>
 

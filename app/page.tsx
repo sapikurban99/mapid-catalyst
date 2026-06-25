@@ -28,6 +28,7 @@ export default function DashboardPage() {
     isLoading,
     formattedToday,
     daysToMainEvent,
+    registrationDate,
     mainEventDate,
     updateMilestone,
   } = useDashboardData();
@@ -105,6 +106,7 @@ export default function DashboardPage() {
         <ProjectStatusCard status={projectStatus} />
         <MilestoneCards
           registrationCount={registrationCount}
+          registrationCloseDate={registrationDate}
           mainEventDate={mainEventDate}
           daysToMainEvent={daysToMainEvent}
           onSave={updateMilestone}
