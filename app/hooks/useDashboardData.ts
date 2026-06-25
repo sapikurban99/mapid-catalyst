@@ -18,7 +18,10 @@ function loadMilestonesLocal(): MilestoneConfig {
   if (typeof window === "undefined") return DEFAULT_MILESTONES;
   try {
     const stored = localStorage.getItem("catalyst_milestones");
-    if (stored) return { ...DEFAULT_MILESTONES, ...JSON.parse(stored) };
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return { ...DEFAULT_MILESTONES, ...parsed, registrationDate: DEFAULT_MILESTONES.registrationDate };
+    }
   } catch {}
   return DEFAULT_MILESTONES;
 }
@@ -40,7 +43,10 @@ async function loadMilestonesFromSupabase(): Promise<MilestoneConfig | null> {
       if (row.key === "registrationDate") cfg.registrationDate = row.value;
       if (row.key === "mainEventDate") cfg.mainEventDate = row.value;
     });
-    if (cfg.registrationDate && cfg.mainEventDate) return cfg as MilestoneConfig;
+    if (cfg.registrationDate && cfg.mainEventDate) {
+      cfg.registrationDate = DEFAULT_MILESTONES.registrationDate;
+      return cfg as MilestoneConfig;
+    }
     return null;
   } catch {
     return null;
