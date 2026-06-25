@@ -27,9 +27,7 @@ export default function DashboardPage() {
     tasks,
     isLoading,
     formattedToday,
-    daysToMilestone,
     daysToMainEvent,
-    registrationDate,
     mainEventDate,
     updateMilestone,
   } = useDashboardData();
@@ -106,9 +104,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <ProjectStatusCard status={projectStatus} />
         <MilestoneCards
-          registrationDate={registrationDate}
+          registrationCount={registrationCount}
           mainEventDate={mainEventDate}
-          daysToMilestone={daysToMilestone}
           daysToMainEvent={daysToMainEvent}
           onSave={updateMilestone}
         />

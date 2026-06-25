@@ -133,10 +133,10 @@ export function useDashboardData() {
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   }, [currentDate, milestones.mainEventDate]);
 
-  const updateMilestone = (field: "registration" | "mainEvent", value: string) => {
+  const updateMilestone = (field: "mainEvent", value: string) => {
     const updated = {
       ...milestones,
-      [field === "registration" ? "registrationDate" : "mainEventDate"]: value,
+      mainEventDate: value,
     };
     setMilestones(updated);
     saveMilestonesLocal(updated);
