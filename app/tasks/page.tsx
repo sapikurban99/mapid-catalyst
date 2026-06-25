@@ -141,7 +141,7 @@ export default function TasksPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [activeWorkstream, setActiveWorkstream] = useState<string>("All");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string>("In Progress");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
