@@ -8,6 +8,7 @@ import {
   ListChecks,
   TreeStructure,
   Files,
+  UsersThree,
   X,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export default function Sidebar({
         { name: "Tasks", href: "/tasks", icon: ListChecks },
         { name: "Organization", href: "/org-structure", icon: TreeStructure },
         { name: "Documents", href: "/documents", icon: Files },
+        { name: "Registrations", href: "/registrations", icon: UsersThree },
       ],
     },
   ];

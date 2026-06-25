@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sparkle, MapTrifold, ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+
 
 import { useDashboardData } from "./hooks/useDashboardData";
 import {
@@ -12,8 +12,6 @@ import {
   getBlockedTasks,
   getWeeklyPriorities,
   getProjectStatus,
-  calculateKPIData,
-  getKpiStatusStyle,
 } from "./lib/dashboardCalculations";
 
 import { ProjectStatusCard } from "./components/dashboard/ProjectStatusCard";
@@ -21,15 +19,12 @@ import { MilestoneCards } from "./components/dashboard/MilestoneCard";
 import { TaskList } from "./components/dashboard/TaskList";
 import { BlockerList } from "./components/dashboard/BlockerList";
 import { WeeklyPriorityList } from "./components/dashboard/WeeklyPriorityList";
-import { KPIPanel } from "./components/dashboard/KPIPanel";
-import { KpiEditorModal } from "./components/dashboard/KpiEditorModal";
+
 import { LoadingSkeleton } from "./components/dashboard/LoadingSkeleton";
-import type { KPI } from "./types/dashboard";
 
 export default function DashboardPage() {
   const {
     tasks,
-    kpis,
     isLoading,
     formattedToday,
     daysToMilestone,
@@ -37,11 +32,10 @@ export default function DashboardPage() {
     registrationDate,
     mainEventDate,
     updateMilestone,
-    setKpis,
   } = useDashboardData();
 
-  const [editKpiForm, setEditKpiForm] = useState<Partial<KPI>>({});
-  const [isEditingKpi, setIsEditingKpi] = useState(false);
+  const [registrationCount, setRegistrationCount] = useState(0);
+  const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
 
   const incompleteTasks = useMemo(() => getIncompleteTasks(tasks), [tasks]);
   const blockedTasks = useMemo(() => getBlockedTasks(tasks), [tasks]);
@@ -53,65 +47,34 @@ export default function DashboardPage() {
     () => getProjectStatus(tasks, incompleteTasks),
     [tasks, incompleteTasks]
   );
-  const calculatedKpis = useMemo(() => calculateKPIData(tasks), [tasks]);
-
-  const displayKpis = useMemo(() => {
-    if (kpis && kpis.length > 0) {
-      return kpis.map((k) => ({
-        ...k,
-        color: getKpiStatusStyle(k.status),
-      }));
-    }
-    return calculatedKpis;
-  }, [kpis, calculatedKpis]);
-
-  const handleEditKpiClick = (kpi: KPI) => {
-    setEditKpiForm(kpi);
-    setIsEditingKpi(true);
-  };
-
-  const handleSaveKpi = async () => {
-    if (!editKpiForm.metric) return;
-
-    const updated = kpis.map((k) =>
-      k.metric === editKpiForm.metric ? (editKpiForm as KPI) : k
-    );
-    setKpis(updated.length > 0 ? updated : [editKpiForm as KPI]);
-    setIsEditingKpi(false);
-
-    try {
-      if (editKpiForm.id) {
-        await supabase
-          .from("catalyst_kpis")
-          .update({
-            target: editKpiForm.target,
-            current: editKpiForm.current,
-            status: editKpiForm.status,
-            progress: editKpiForm.progress,
-          })
-          .eq("id", editKpiForm.id);
-      } else {
-        await supabase.from("catalyst_kpis").upsert(
-          {
-            metric: editKpiForm.metric,
-            target: editKpiForm.target,
-            current: editKpiForm.current,
-            status: editKpiForm.status,
-            progress: editKpiForm.progress,
-          },
-          { onConflict: "metric" }
+  useEffect(() => {
+    const fetchRegistrationCount = async () => {
+      try {
+        const res = await fetch(
+          "https://geoserver.mapid.io/layers_new/get_layer?api_key=6015daaa36324bb885749c34fe56fe13&layer_id=6a2a1811bc475d2ec56a9b2b&project_id=6a2a178d7463a498641f2d33"
         );
-
-        const { data } = await supabase
-          .from("catalyst_kpis")
-          .select("*")
-          .order("id", { ascending: true });
-        if (data) setKpis(data as KPI[]);
+        const data = await res.json();
+        let totalTim = 0;
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            if (item && Array.isArray(item.features)) {
+              totalTim += item.features.length;
+            }
+          }
+        } else if (data && Array.isArray(data.features)) {
+          totalTim = data.features.length;
+        }
+        setRegistrationCount(totalTim);
+      } catch (e) {
+        console.error("Error fetching registration count:", e);
+      } finally {
+        setIsLoadingRegistration(false);
       }
-    } catch (e) {
-      console.error("Error saving KPI to Supabase:", e);
-    }
-  };
+    };
+    fetchRegistrationCount();
+  }, []);
+
+
 
   return (
     <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
@@ -140,7 +103,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <ProjectStatusCard status={projectStatus} />
         <MilestoneCards
           registrationDate={registrationDate}
@@ -149,6 +112,22 @@ export default function DashboardPage() {
           daysToMainEvent={daysToMainEvent}
           onSave={updateMilestone}
         />
+        {/* Registration Count Card */}
+        <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+            Total Pendaftar
+          </p>
+          <div className="text-3xl font-extrabold text-indigo-600">
+            {isLoadingRegistration ? (
+              <span className="inline-block w-16 h-9 bg-zinc-100 rounded-lg animate-pulse" />
+            ) : (
+              registrationCount
+            )}
+          </div>
+          <p className="text-[11px] font-semibold text-zinc-400 mt-1">
+            tim terdaftar
+          </p>
+        </div>
       </div>
 
       {/* Main Grid Section */}
@@ -162,9 +141,6 @@ export default function DashboardPage() {
           <WeeklyPriorityList items={weeklyPriorities} />
         </div>
       </div>
-
-      {/* KPI Panel */}
-      <KPIPanel kpis={displayKpis} onEditKpi={handleEditKpiClick} />
 
       {/* Bottom Banner Roadmap */}
       <div className="bg-zinc-950 text-white border border-zinc-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
@@ -186,15 +162,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-
-      {/* KPI Editor Modal */}
-      <KpiEditorModal
-        isOpen={isEditingKpi}
-        form={editKpiForm}
-        onClose={() => setIsEditingKpi(false)}
-        onChange={setEditKpiForm}
-        onSave={handleSaveKpi}
-      />
 
       {/* Loading Skeleton */}
       {isLoading && <LoadingSkeleton />}
