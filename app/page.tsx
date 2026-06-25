@@ -5,7 +5,6 @@ import { Sparkle, MapTrifold, ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-
 import { useDashboardData } from "./hooks/useDashboardData";
 import {
   getIncompleteTasks,
@@ -34,7 +33,6 @@ export default function DashboardPage() {
   } = useDashboardData();
 
   const [registrationCount, setRegistrationCount] = useState(0);
-  const [isLoadingRegistration, setIsLoadingRegistration] = useState(true);
 
   const incompleteTasks = useMemo(() => getIncompleteTasks(tasks), [tasks]);
   const blockedTasks = useMemo(() => getBlockedTasks(tasks), [tasks]);
@@ -46,6 +44,7 @@ export default function DashboardPage() {
     () => getProjectStatus(tasks, incompleteTasks),
     [tasks, incompleteTasks]
   );
+
   useEffect(() => {
     const fetchRegistrationCount = async () => {
       try {
@@ -66,14 +65,10 @@ export default function DashboardPage() {
         setRegistrationCount(totalTim);
       } catch (e) {
         console.error("Error fetching registration count:", e);
-      } finally {
-        setIsLoadingRegistration(false);
       }
     };
     fetchRegistrationCount();
   }, []);
-
-
 
   return (
     <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
@@ -102,7 +97,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <ProjectStatusCard status={projectStatus} />
         <MilestoneCards
           registrationCount={registrationCount}
@@ -111,22 +106,6 @@ export default function DashboardPage() {
           daysToMainEvent={daysToMainEvent}
           onSave={updateMilestone}
         />
-        {/* Registration Count Card */}
-        <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
-            Total Pendaftar
-          </p>
-          <div className="text-3xl font-extrabold text-indigo-600">
-            {isLoadingRegistration ? (
-              <span className="inline-block w-16 h-9 bg-zinc-100 rounded-lg animate-pulse" />
-            ) : (
-              registrationCount
-            )}
-          </div>
-          <p className="text-[11px] font-semibold text-zinc-400 mt-1">
-            tim terdaftar
-          </p>
-        </div>
       </div>
 
       {/* Main Grid Section */}

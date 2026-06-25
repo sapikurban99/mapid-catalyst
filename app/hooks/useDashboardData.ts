@@ -10,7 +10,7 @@ type MilestoneConfig = {
 };
 
 const DEFAULT_MILESTONES: MilestoneConfig = {
-  registrationDate: "2026-06-08",
+  registrationDate: "2026-07-27",
   mainEventDate: "2026-09-24",
 };
 
